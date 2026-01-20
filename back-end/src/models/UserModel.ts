@@ -16,13 +16,6 @@ export enum UserStatus  {
   pending_verification = "pending_verification"
 }
 
-// type QueryHelpers = {
-//   porco: () => UserDocument;
-// }
-
-// type UserMethods = {
-//   dio: () => UserDocument;
-// };
 
 const userSchema = new mongoose.Schema({
   name: {
@@ -93,12 +86,6 @@ const userSchema = new mongoose.Schema({
     }
   }
 })
-userSchema.methods.dio = function () {
-  const obj = this.toObject();
-  delete obj.createdAt;
-  delete obj.updatedAt;
-  return obj;
-};
 
 export type UserSchemaProps = mongoose.InferSchemaType<typeof userSchema>;
 export type UserProps = UserSchemaProps & {id: string;};
