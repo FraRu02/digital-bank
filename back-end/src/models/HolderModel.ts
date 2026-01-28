@@ -3,6 +3,14 @@ import Utilities from "@/classes/Utilities";
 import mongoose, { Model, Query } from "mongoose";
 import CardModel, { CardType } from "./CardModel";
 import BankAccountModel from "./BankAccountModel";
+import UserModel from "./UserModel";
+
+
+export enum HolderStatus {
+  active = "active",
+  pending_verification = "pending_verification"
+}
+
 
 const GeometrySchema = new mongoose.Schema(
   {
@@ -74,11 +82,12 @@ const holderSchema = new mongoose.Schema({
   taxCode: {
     type: String,
     required: true,
-    unique: [true, "this tax code already exist"]
+    unique: [true, "This tax code already exist"]
   },
   email: {
     type: String,
     required: true,
+    unique: [true, "This email already exist"]
   },
   phoneNumber: {
     type: String,
@@ -87,6 +96,12 @@ const holderSchema = new mongoose.Schema({
   address: {
     type: AddressSchema,
     required: true
+  },
+  status: {
+    type: String,
+    enum: HolderStatus,
+    default: HolderStatus.pending_verification,
+    required: [true, "Enter status"],
   }
 }, {
   timestamps: true,
@@ -112,6 +127,10 @@ class HolderModel extends BaseModel<HolderDocument> {
     const [ids, options] = args;
     return await Utilities.followSession(options?.session, async(session) => {
       const result = await super.deleteManyById(ids, {...options, session});
+      await UserModel.getInstance().updateMany(
+        { holders: { $in: ids } },          // utenti che contengono almeno uno di questi
+        { $pull: { holders: { $in: ids } } }, // rimuove tutti quelli presenti
+        {...options, session});
       await BankAccountModel.getInstance().deleteMany({holderId: {$in: ids}}, {...options, session});
       await CardModel.getInstance().deleteMany({holderId: {$in: ids}, type: CardType.prepaid}, {...options, session});
       return result;

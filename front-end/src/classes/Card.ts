@@ -53,6 +53,18 @@ abstract class Card {
     }}).then((res) => res.data);
   }
 
+  static async verifyOTP(data:{cardId: string, code: string}):Promise<BaseCardProps> {
+    await Utilities.sleep(1000);
+    return await server.post("/cards/verifyOtp", data).then((res) => res.data);
+  }
+
+  static async resendOTP(cardId: string):Promise<BaseCardProps> {
+    await Utilities.sleep(1000);
+    return await server.post("/cards/resendOtp", {
+      cardId
+    }).then((res) => res.data);
+  }
+
 
   static isDebitType(card: any): card is DebitCardProps {
     return card.bankAccountId && card.type === CardType.debit;
@@ -71,8 +83,10 @@ export type BaseCardProps = {
   type: CardType;
   expire: string;
   cvv: string;
-  holderId?: string;
+  holderId: string;
   status: CardStatus;
+  otpExpiresAt?: string;
+  otpAttempts?: number;
 }
 
 export type DebitCardProps = Omit<BaseCardProps, "type"> & { type: CardType.debit, bankAccountId: string };
@@ -86,10 +100,7 @@ export enum CardType {
 export enum CardStatus {
   active = "active",
   inactive = "inactive",
-  blocked = "blocked",
-  expired = "expired",
-  replaced = "replaced",
-  cancelled = "cancelled"
+  pending_verification = "pending_verification"
 }
 
 

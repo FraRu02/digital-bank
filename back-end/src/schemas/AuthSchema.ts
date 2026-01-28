@@ -1,3 +1,4 @@
+import { AuthRequest } from "@/controllers/AuthController";
 import { type Request } from "express";
 import * as z from "zod"; 
 
@@ -20,4 +21,4 @@ export const verifyOtpSchema = z.object({
 
 export type SigninRequest = Request<{}, any, z.infer<typeof signinSchema>>;
 export type LoginRequest = Request<{}, any, z.infer<typeof loginSchema>>;
-export type VerifyOtpRequest = Request<{}, any, z.infer<typeof verifyOtpSchema>>;
+export type VerifyOtpRequest = AuthRequest<{}, any, z.infer<typeof verifyOtpSchema>>;

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
-import CardModel from "./CardModel";
-import BaseModel, { DeleteManyByIdArgsProps, type DeleteManyArgsProps } from "@/classes/BaseModel";
+import CardModel, { CardDocument } from "./CardModel";
+import BaseModel, { type AggregateArgsProps, type DeleteManyByIdArgsProps, type DeleteManyArgsProps } from "@/classes/BaseModel";
 import Utilities from "@/classes/Utilities";
 import TransactionModel from "./TransactionModel";
 
@@ -43,6 +43,22 @@ const bankAccountSchema = new mongoose.Schema({
     enum: BankAccountStatus,
     default: BankAccountStatus.pending_verification,
     required: [true, "Enter status"],
+  },
+  otpCodeHash: {
+    type: String,
+    required: true,
+    select: false
+  },
+  otpExpiresAt: {
+    type: Date,
+    required: true,
+    select: false
+  },
+  otpAttempts: {
+    type: Number,
+    required: true,
+    default: 0,
+    select: false
   }
 }, {
   timestamps: true,
@@ -64,6 +80,43 @@ export type BankAccountDocument = mongoose.HydratedDocument<BankAccountSchemaPro
 
 
 class BankAccountModel extends BaseModel<BankAccountDocument> {
+
+  override async aggregate(...args: AggregateArgsProps<CardDocument>) {
+    const [pipeline, options] = args;
+    const defaultPipeline:mongoose.PipelineStage[] = [
+      { $set: { id: "$_id"}},
+      { $unset: ["_id", "__v", "otpCodeHash"]},
+      {
+        $set: {
+          otpExpiresAt: {
+            $cond: [
+              { $eq: ["$status", BankAccountStatus.pending_verification] },
+              "$otpExpiresAt",
+              "$$REMOVE"
+            ]
+          },
+          otpAttempts: {
+            $cond: [
+              { $eq: ["$status", BankAccountStatus.pending_verification] },
+              "$otpAttempts",
+              "$$REMOVE"
+            ]
+          },
+          iban: {
+            $cond: [
+              { $eq: ["$status", BankAccountStatus.active] },
+              "$iban",
+              "$$REMOVE"
+            ]
+          }
+        }
+      }
+    ];
+    return await super.aggregate([
+      ...pipeline,
+      ...defaultPipeline,
+    ], options);
+  }
 
   override async deleteManyById(...args: DeleteManyByIdArgsProps<BankAccountDocument>) {
     const [ids, options] = args;

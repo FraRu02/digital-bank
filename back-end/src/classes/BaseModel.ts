@@ -12,6 +12,7 @@ export type UpdateManyByIdArgsProps<T extends Document> = Parameters<BaseModel<T
 export type DeleteByIdArgsProps<T extends Document> = Parameters<BaseModel<T>["deleteById"]>;
 export type DeleteManyByIdArgsProps<T extends Document> = Parameters<BaseModel<T>["deleteManyById"]>;
 export type DeleteManyArgsProps<T extends Document> = Parameters<BaseModel<T>["deleteMany"]>;
+export type AggregateArgsProps<T extends Document> = Parameters<BaseModel<T>["aggregate"]>;
 
 
 abstract class BaseModel<T extends Document, TLean = Omit<T, keyof Document>> {
@@ -120,6 +121,10 @@ abstract class BaseModel<T extends Document, TLean = Omit<T, keyof Document>> {
 
   async deleteMany(filter: RootFilterQuery<T>, options?: (DeleteOptions & MongooseBaseQueryOptions<T>) | null):Promise<DeleteResult> { 
     return await this.model.deleteMany(filter, options);
+  }
+
+  async aggregate(pipeline: mongoose.PipelineStage[], options?: mongoose.AggregateOptions):Promise<T[]> {
+    return await this.model.aggregate(pipeline, options);
   }
 }
 

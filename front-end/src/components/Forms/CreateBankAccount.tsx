@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import AddressAutocomplete, { type AddressProps } from '@/src/components/inputs/AddressAutocomplete';
 import Utilities from '@/src/classes/Utilities';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs, { Dayjs } from 'dayjs';
+import dayjs from 'dayjs';
 import PhoneInputField from '../inputs/PhoneInputField';
 import type { HolderProps } from '@/src/classes/Holder';
 import { useQuery } from '@tanstack/react-query';
@@ -132,6 +132,7 @@ const Form:React.FC<FormProps> = ({children, onSendForm}) => {
       ...form,
       holder: {
         ...form.holder,
+        status: undefined,
         createdAt: undefined,
         updatedAt: undefined,
         address: {
@@ -234,10 +235,12 @@ const ConfirmButton:React.FC<ButtonProps> = ({...otherProps}) => {
   )
 }
 
+
 const CreateBankAccount = {
   Root,
   Form,
-  ConfirmButton
+  ConfirmButton,
+
 }
 
 export default CreateBankAccount

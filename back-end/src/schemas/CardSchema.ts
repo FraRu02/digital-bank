@@ -20,6 +20,15 @@ export const createSchema = z.union([
   }).strict()
 ]);
 
+export const verifyOtpSchema = z.object({ 
+  cardId: z.string(),
+  code: z.string().length(6),
+}).strict();
+
+export const resendOtpSchema = z.object({ 
+  cardId: z.string()
+}).strict();
+
 export const deleteSchema = z.object({ 
   cardIds: z.array(z.string()),
 }).strict();
@@ -29,3 +38,5 @@ export type GetIncExpRequest = AuthRequest<{id: string}, any, {}>;
 export type GetRequest = AuthRequest<{id?: string}, any, {}>;
 export type CreateRequest = AuthRequest<{}, any, z.infer<typeof createSchema>>;
 export type DeleteRequest = AuthRequest<{}, any, z.infer<typeof deleteSchema>>;
+export type VerifyOtpRequest = AuthRequest<{}, any, z.infer<typeof verifyOtpSchema>>;
+export type ResendOtpRequest = AuthRequest<{}, any, z.infer<typeof resendOtpSchema>>;

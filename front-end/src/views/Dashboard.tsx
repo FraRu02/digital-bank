@@ -14,12 +14,15 @@ type DashboardViewContextProps = {
   transactionsQuery: UseQueryResult<BaseTransactionProps[], Error>;
   selectedCard?: BaseCardProps; 
   setSelectedCard:  React.Dispatch<React.SetStateAction<BaseCardProps | undefined>>;
+  cardToVerify: BaseCardProps|null; 
+  setCardToVerify:  React.Dispatch<React.SetStateAction<BaseCardProps | null>>;
 }
 const DashboardViewContext = createContext<DashboardViewContextProps|undefined>(undefined);
 export const useDashboardView = () => useContext(DashboardViewContext)!
 
 const Dashboard = () => {
   const [selectedCard, setSelectedCard] = useState<BaseCardProps>();
+  const [cardToVerify, setCardToVerify] = useState<BaseCardProps|null>(null);
   const cardsQuery = useQuery({
     queryKey: ["cards"],
     queryFn: Card.getMe
@@ -56,14 +59,15 @@ const Dashboard = () => {
     enabled: !!selectedCard,
   });
 
+
   const value:DashboardViewContextProps = {
     cardsQuery,
     bankAccountQuery,
     selectedCardQuery,
     incExpQuery,
     transactionsQuery,
-    selectedCard,
-    setSelectedCard
+    selectedCard, setSelectedCard,
+    cardToVerify, setCardToVerify
   }
 
   return (

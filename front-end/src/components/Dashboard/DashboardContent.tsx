@@ -13,18 +13,21 @@ import { UserRole } from '@/src/classes/User';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import type { StoreProps } from '@/src/store/rootReducer';
+import VerifyCardOtpModal from './VerifyCardOtpModal';
+import { CardStatus } from '@/src/classes/Card';
 
 
 const DashboardContent = () => {
   const {t} = useTranslation();
   const user = useSelector((state:StoreProps) => state.auth.user);
-  const {bankAccountQuery, selectedCardQuery, cardsQuery, incExpQuery, selectedCard, setSelectedCard} = useDashboardView();
+  const {bankAccountQuery, selectedCardQuery, cardsQuery, incExpQuery, selectedCard, cardToVerify, setCardToVerify, setSelectedCard} = useDashboardView();
   const {data:cards, isLoading:loadingCards, isFetching:fetchingCards} = cardsQuery;
   const {data:bankAccount, isFetching:fetchingBankAccount} = bankAccountQuery;
   const {data:selectedCardData, isFetching:fetchingSelectedCard} = selectedCardQuery;
   const {data:incExp, isFetching:fetchingIncExp} = incExpQuery;
   const [openOperationsModal, setOpenOperationsModal] = useState<boolean>(false);
   const [openServiceModal, setOpenServiceModal] = useState<boolean>(false);
+  const [openVerifyCardOtpModal, setOpenVerifyCardOtpModal] = useState<boolean>(false);
   const stackRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState<number>();
 
@@ -41,10 +44,20 @@ const DashboardContent = () => {
   }, [stackRef.current])
 
   useEffect(() => {
-    if(!fetchingCards && !selectedCard && cards && cards.length > 0) {
-      setSelectedCard(cards[0]);
+    if(!fetchingCards && cards && cards.length > 0) {
+      if(!selectedCard) {
+        const firstAvailableCard = cards.find((e) => e.status === CardStatus.active);
+        if(firstAvailableCard) setSelectedCard(firstAvailableCard);
+      }
+      const firstPendingCard = cards.find((e) => e.status === CardStatus.pending_verification) ?? null;
+      setCardToVerify(firstPendingCard);
     }
-  }, [selectedCard, fetchingCards]);
+  }, [selectedCard, cards]);
+
+
+  useEffect(() => {
+    setOpenVerifyCardOtpModal(Boolean(cardToVerify));
+  }, [cardToVerify])
 
   if(loadingCards) {
     return (
@@ -76,7 +89,13 @@ const DashboardContent = () => {
       </Stack>
       <Grid container spacing={2}>
         <Grid size={12}>
-          <CardsList list={cards} selected={selectedCard} loadingCardId={(fetchingSelectedCard||fetchingBankAccount||fetchingIncExp) ? selectedCard?.id : null} onClickItem={setSelectedCard} />
+          <CardsList
+            list={cards}
+            selected={selectedCard}
+            loadingCardId={(fetchingSelectedCard||fetchingBankAccount||fetchingIncExp) ? selectedCard?.id : null}
+            onClickItem={setSelectedCard}
+            onClickItemVerify={(card) => setCardToVerify(card)}
+          />
         </Grid>
        {cards.length > 0 && 
        <>
@@ -100,6 +119,7 @@ const DashboardContent = () => {
       </Grid>
       <OperationsModal open={openOperationsModal} onClose={() => setOpenOperationsModal(false)}/>
       <CreateBankingServiceModal open={openServiceModal} onClose={() => setOpenServiceModal(false)}/>
+      <VerifyCardOtpModal open={openVerifyCardOtpModal} onClose={() => setOpenVerifyCardOtpModal(false)}/>
     </Box>
   )
 }

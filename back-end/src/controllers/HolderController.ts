@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { type AuthRequest } from "./AuthController";
-import HolderModel from "@/models/HolderModel";
+import HolderModel, { HolderStatus } from "@/models/HolderModel";
 import UserModel from "@/models/UserModel";
 import { type GetRequest } from "@/schemas/CardSchema";
 import { type DeleteRequest } from "@/schemas/HolderSchema";
@@ -10,8 +10,11 @@ abstract class HolderController {
   static async getMe(req:AuthRequest, res:Response) {
     try {
       const user = req.user!;
-      const holders = await UserModel.getInstance().getById(user.id, {holders: 1});
-      const populated = await holders.populate("holders");
+      const holders = await UserModel.getInstance().getOne({_id: user.id}, {holders: 1});
+      const populated = await holders.populate({
+        path: "holders",
+        match: { status: HolderStatus.active }
+      });
       res.status(200).send(populated.holders)
     } catch (error:any) {
       res.status(400).send(error.message);

@@ -1,9 +1,7 @@
 import mongoose, {Model} from "mongoose";
 import TransactionModel from "./TransactionModel";
-import BaseModel, {DeleteManyByIdArgsProps, type DeleteByIdArgsProps, type DeleteManyArgsProps } from "@/classes/BaseModel";
+import BaseModel, {type AggregateArgsProps, type DeleteManyByIdArgsProps, type DeleteByIdArgsProps, type DeleteManyArgsProps } from "@/classes/BaseModel";
 import Utilities from "@/classes/Utilities";
-type DeleteOptions = mongoose.mongo.DeleteOptions;
-type UpdateOptions = mongoose.mongo.UpdateOptions;
 
 export enum CardType {
   debit = "debit",
@@ -13,10 +11,7 @@ export enum CardType {
 export enum CardStatus {
   active = "active",
   inactive = "inactive",
-  blocked = "blocked",
-  expired = "expired",
-  replaced = "replaced",
-  cancelled = "cancelled"
+  pending_verification = "pending_verification"
 }
 
 
@@ -47,11 +42,12 @@ const cardSchema = new mongoose.Schema({
   holderId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "holder",
+    required: true
   },
   status: {
     type: String,
     enum: CardStatus,
-    default: CardStatus.inactive,
+    default: CardStatus.pending_verification,
     required: [true, "Enter status"],
   },
   bankAccountId: {
@@ -61,6 +57,22 @@ const cardSchema = new mongoose.Schema({
   balance: {
     type: mongoose.Schema.Types.Decimal128,
     get: (v: mongoose.Types.Decimal128) => v ? parseFloat(v.toString()) : 0
+  },
+  otpCodeHash: {
+    type: String,
+    required: true,
+    select: false
+  },
+  otpExpiresAt: {
+    type: Date,
+    required: true,
+    select: false
+  },
+  otpAttempts: {
+    type: Number,
+    required: true,
+    default: 0,
+    select: false
   }
 }, {
   timestamps: true,
@@ -86,15 +98,56 @@ export type DebitCardProps = BaseCardProps & PickRequiredNonNull<CardProps, "ban
 export type PrepaidCardProps = BaseCardProps & PickRequiredNonNull<CardProps, "balance">;
 class CardModel extends BaseModel<CardDocument> {
 
-  // async create(card: PickCreateProps<DebitCardProps>[], options?: CreateOptions):Promise<DebitCardDocument[]>;
-  // async create(card: PickCreateProps<PrepaidCardProps>[], options?: CreateOptions):Promise<PrepaidCardDocument[]>;
-  // async create(card: PickCreateProps<CardSchemaProps>[], options?: CreateOptions) {
-  //   if (CardModel.isDebitType(card[0])) {
-  //     return await CardModel.createDebit(card as DebitCardProps[], options);
-  //   } else if (CardModel.isPrepaidType(card[0])) {
-  //     return CardModel.createPrepaid(card as PrepaidCardProps[], options);
-  //   }
-  // };
+  override async aggregate(...args: AggregateArgsProps<CardDocument>) {
+    const [pipeline, options] = args;
+    const defaultPipeline:mongoose.PipelineStage[] = [
+      { $set: { id: "$_id"}},
+      { $unset: ["_id", "__v", "otpCodeHash", "expire"]},
+      {
+        $set: {
+          otpExpiresAt: {
+            $cond: [
+              { $eq: ["$status", CardStatus.pending_verification] },
+              "$otpExpiresAt",
+              "$$REMOVE"
+            ]
+          },
+          otpAttempts: {
+            $cond: [
+              { $eq: ["$status", CardStatus.pending_verification] },
+              "$otpAttempts",
+              "$$REMOVE"
+            ]
+          },
+          number: {
+            $cond: [
+              { $eq: ["$status", CardStatus.active] },
+              "$number",
+              "$$REMOVE"
+            ]
+          },
+          cvv: {
+            $cond: [
+              { $eq: ["$status", CardStatus.active] },
+              "$cvv",
+              "$$REMOVE"
+            ]
+          },
+          expire: {
+            $cond: [
+              { $eq: ["$status", CardStatus.active] },
+              "$expire",
+              "$$REMOVE"
+            ]
+          }
+        }
+      }
+    ];
+    return await super.aggregate([
+      ...pipeline,
+      ...defaultPipeline,
+    ], options);
+  }
 
   override async deleteById(...args: DeleteByIdArgsProps<CardDocument>) {
     const [id, options] = args;

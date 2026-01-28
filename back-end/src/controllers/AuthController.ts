@@ -26,6 +26,8 @@ abstract class AuthController {
             }else res.status(200).send(user);
             return;
           }
+        }else {
+          return res.sendStatus(403);
         }
       }
       if(tempToken) {

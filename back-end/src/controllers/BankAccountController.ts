@@ -9,7 +9,8 @@ import { hasUserPermissions } from "@/middleware/UtilitiesMiddleware";
 import TransactionModel from "@/models/TransactionModel";
 import HolderModel, { HolderDocument } from "@/models/HolderModel";
 import Utilities from "@/classes/Utilities";
-
+import Otp from "@/classes/Otp";
+import ResendEmail from "@/classes/ResendEmail";
 
 abstract class BankAccountController {
 
@@ -19,7 +20,7 @@ abstract class BankAccountController {
       const user = req.user!;
       await Utilities.followSession(null, async(session) => {
         const userBankAccounts = await BankAccountModel.getInstance().getMany({userId: user.id}, null);
-        if(userBankAccounts.length >= 4) throw new Error("Maximum 4 bank accounts per user");
+        if(userBankAccounts.length >= 3) throw new Error("Maximum 3 bank accounts per user");
         let holder:HolderDocument;
         const foundedHolder = await HolderModel.getInstance().getOne({taxCode: reqHolder.taxCode}).catch(() => null);
         if(!foundedHolder) holder = await HolderModel.getInstance().create([reqHolder as any], {session}).then((res) => res[0]);
@@ -28,20 +29,33 @@ abstract class BankAccountController {
           $addToSet: { holders: holder.id },
         }, {session})
         const iban = BankAccountController.generateIBAN();
+        const otp = await Otp.generate();
         const newBankAccount = await BankAccountModel.getInstance().create([{
           userId: req.user?.id as any,
           iban,
-          holderId: holder.id
+          holderId: holder.id,
+          otpCodeHash: otp.otpCodeHash,
+          otpExpiresAt: otp.otpExpiresAt,
+          otpAttempts: otp.otpAttempts
         }], {session}).then((res) => res[0]);
         await CardModel.getInstance().create([{
           userId: req.user!.id as any,
+          holderId: holder.id,
           bankAccountId: newBankAccount.id,
           number: CardController.generateCardNumber(),
           type: CardType.debit,
           expire: new Date(new Date().valueOf()+3600*24*265*4*1000),
-          cvv: CardController.generateCVV()
+          cvv: CardController.generateCVV(),
+          otpCodeHash: otp.otpCodeHash,
+          otpExpiresAt: otp.otpExpiresAt,
+          otpAttempts: otp.otpAttempts
         }], {session})
-        res.status(200).send(newBankAccount);
+        await ResendEmail.getInstance().sendEmail({
+          to: holder.email,
+          subject: 'Verifica conto bancario',
+          html: `Il tuo codice di verifica è: <strong>${otp.otp}</strong>`,
+        });
+        res.status(200).send({...newBankAccount.toJSON(), iban: undefined, balance: undefined});
       });
     } catch (error:any) {
       res.status(400).send(error.message);
@@ -52,12 +66,21 @@ abstract class BankAccountController {
     try {
       const {id} = req.params;
       if(id) {
-        const bankAccount = await BankAccountModel.getInstance().getById(id);
+        let bankAccount = await BankAccountModel.getInstance().getById(id, null, {select: "+otpExpiresAt +otpAttempts"});
         if(bankAccount.userId.toString() !== req.user!.id) return res.status(401).send("This bank account is not yours");
+        if (bankAccount.status === BankAccountStatus.pending_verification) {
+          bankAccount = {...bankAccount.toJSON(), iban: undefined, balance: undefined} as any
+        }else bankAccount = {...bankAccount.toJSON(), otpExpiresAt: undefined, otpAttempts: undefined} as any;
         res.status(200).send(bankAccount);
       }else {
         const bankAccounts = await BankAccountModel.getInstance().getMany({userId: req.user!.id});
-        res.status(200).send(bankAccounts);
+        const formatted = bankAccounts.map(element => {
+          if (element.status === BankAccountStatus.pending_verification) {
+            return{...element.toJSON(), iban: undefined, balance: undefined};
+          }
+          return{...element.toJSON(), otpExpiresAt: undefined, otpAttempts: undefined};
+        });
+        res.status(200).send(formatted);
       }
     } catch (error:any) {
       res.status(400).send(error.message);
@@ -127,7 +150,7 @@ abstract class BankAccountController {
           bankAccountId: id,
         },
         {
-          status: CardStatus.cancelled
+          status: CardStatus.inactive
         }, {session}
         );
         res.status(200).send(updatedBankAccount);

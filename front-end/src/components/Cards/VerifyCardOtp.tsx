@@ -1,31 +1,34 @@
-import { type UserProps } from '@/src/classes/User';
-import useFetch from '@/src/hooks/useFetch';
-import { resendOtp, verifyOtp } from '@/src/store/auth/authActions';
-import type { StoreProps } from '@/src/store/rootReducer';
-import { Button, Paper, Stack, Typography } from '@mui/material';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Button, CircularProgress, Stack, Typography } from '@mui/material';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import { string } from 'yup';
-import VerifyEmailImage from "@/src/assets/img/verify_email.png";
 import CustomOtpInput from '../inputs/CustomOtpInput';
+import VerifyEmailImage from "@/src/assets/img/verify_email.png";
+import type { BaseCardProps } from '@/src/classes/Card';
 import ErrorIcon from '@mui/icons-material/Error';
-import ThemeSwitch from '../ThemeSwitch';
-import LanguageSwitch from '../LanguageSwitch';
+import useFetch from '@/src/hooks/useFetch';
+import { string } from 'yup';
+import Card from '@/src/classes/Card';
+import { useQueryClient } from '@tanstack/react-query';
+
+
+type VerifyCardOtpProps = {
+  card?: BaseCardProps|null;
+  onVerify?: () => void;
+}
 
 const validation = string().length(6).required();
 
-const OtpVerificationContent:React.FC = () => {
+
+const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
   const {t} = useTranslation();
-  const user = useSelector((state:StoreProps) => state.auth.user);
+  const queryClient = useQueryClient();
   const [code, setCode] = useState<string>("");
-  const {fetchData:fetchVerifyOtp, loading:loadingVerify, error:verifyError} = useFetch<UserProps>();
-  const {fetchData:fetchResendOtp, loading:loadingResend, error:resendError} = useFetch<UserProps>();
   const [isFormValid, setIsFormValid] = useState<boolean>(false);
+  const {fetchData:fetchVerifyOtp, loading:loadingVerify, error:verifyError, response: verifyOtpResponse} = useFetch<BaseCardProps>();
+  const {fetchData:fetchResendOtp, loading:loadingResend, error:resendError, response: resendOtpResponse} = useFetch<BaseCardProps>();
   const [timer, setTimer] = useState<number>(1000);
   const [isExpired, setIsExpired] = useState<boolean>(false);
   const [tooManyAttemps, setTooManyAttemps] = useState<boolean>(false);
-
 
   const validateForm = useCallback(async(code:string) => {
     try {
@@ -38,12 +41,13 @@ const OtpVerificationContent:React.FC = () => {
       setIsFormValid(false);
     }
   }, [])
+  
 
   useEffect(() => {
     let interval:any;
-    if(!loadingVerify && user && !verifyError) {
-      const diff =  new Date(user.otpExpiresAt!).setMilliseconds(0).valueOf() - new Date().setMilliseconds(0).valueOf();
-      if(diff <= 0 || isNaN(diff)) return;
+    if(!loadingVerify && card && !verifyError) {
+      const diff = new Date(card.otpExpiresAt!).setMilliseconds(0).valueOf() - new Date().setMilliseconds(0).valueOf();
+      if(diff <= 0 || isNaN(diff)) {setTimer(0); return;}
       setTimer(diff);
       interval = setInterval(() => {
         setTimer((prev) => {
@@ -58,8 +62,35 @@ const OtpVerificationContent:React.FC = () => {
     return () => {
       clearInterval(interval);
     }
-  }, [user?.otpExpiresAt])
-  
+  }, [card?.otpExpiresAt])
+
+  useEffect(() => {
+    if(!resendOtpResponse) return;
+
+    queryClient.setQueryData(
+      ["cards"],
+      (oldData: BaseCardProps[]) => {
+        const index = oldData.findIndex((e) => e.id === resendOtpResponse?.id);
+        if(index < 0) return oldData;
+        return (oldData as any).toSpliced(index, 1, resendOtpResponse);
+      }
+    );
+  }, [resendOtpResponse])
+ 
+  useEffect(() => {
+    if(!resendError && verifyOtpResponse) {
+      queryClient.setQueryData(
+        ["cards"],
+        (oldData: BaseCardProps[]) => {
+          const index = oldData.findIndex((e) => e.id === verifyOtpResponse?.id);
+          if(index < 0) return oldData;
+          return (oldData as any).toSpliced(index, 1, verifyOtpResponse);
+        }
+      );
+      onVerify?.();
+    } 
+  }, [verifyOtpResponse])
+
   useEffect(() => {
     validateForm(code);
   }, [code])
@@ -69,19 +100,19 @@ const OtpVerificationContent:React.FC = () => {
   }, [timer])
   
   useEffect(() => {
-    if((user && user.otpAttempts! >= 5 )|| verifyError?.message === "Too many attempts") 
+    if((card && card.otpAttempts! >= 5 )|| verifyError?.message === "Too many attempts") 
       setTooManyAttemps(true);
-  }, [verifyError, user?.otpAttempts])
+  }, [verifyError, card?.otpAttempts])
   
   const handleClickVerify = useCallback(() => {
-    fetchVerifyOtp(verifyOtp(code));
+    fetchVerifyOtp(Card.verifyOTP({cardId: card!.id, code}));
   }, [code]);
 
   const handleClickResendCode = useCallback(async () => {
-    await fetchResendOtp(resendOtp());
+    await fetchResendOtp(Card.resendOTP(card!.id));
     setTooManyAttemps(false);
     setIsExpired(false);
-  }, []);
+  }, [card]);
 
   const getTimerFormatted = useCallback((value:number) => {
     if(!value) return "00:00";
@@ -92,20 +123,7 @@ const OtpVerificationContent:React.FC = () => {
   }, [])
 
   return (
-    <>
-    <Stack sx={{position: "absolute", top: 0, right: 0, zIndex: 10, p: 1}} direction={"row"}>
-      <ThemeSwitch />
-      <LanguageSwitch />
-    </Stack>
-    <Paper 
-      sx={{
-        position: "absolute",
-        top: "50%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: 600
-      }}
-    >
-      <Stack sx={{textAlign: "center"}} spacing={2} p={2}>
+    <Stack sx={{textAlign: "center"}} spacing={2} p={2}>
       {!tooManyAttemps && !isExpired &&
       <>
         <img style={{width: 300, alignSelf: "center"}} src={VerifyEmailImage} />
@@ -114,7 +132,7 @@ const OtpVerificationContent:React.FC = () => {
           <Trans
               i18nKey="view.otp_verification.verification.content_1"
               components={{ bold: <strong/> }}
-              values={{ email:  user?.email}}
+              values={{ email:  "dio@gmail.com"}}
             />
          </Typography>
         <Typography>{t("view.otp_verification.verification.content_2")}.</Typography>
@@ -162,60 +180,8 @@ const OtpVerificationContent:React.FC = () => {
       </>
       } 
       </Stack>
-    </Paper>
-    
-    </>
   )
 
-  
-  // return (
-  //   <Stack sx={{p: 1, width: "100%", maxWidth: 850, mx: "auto"}} spacing={1}>
-  //     {!tooManyAttemps && !isExpired &&
-  //     <>
-  //     <Typography variant="h4" fontWeight={"bold"}>{t("Verification code")}</Typography>
-  //     <Typography>{t("We have sent the verification code to your email address")}</Typography>
-  //     <TextField value={code} onChange={(e) => setCode(e.target.value)}/>
-  //     <Button 
-  //       disabled={(loadingVerify || !isFormValid)}
-  //       sx={{width: "fit-content", alignSelf: "center"}}
-  //       variant="contained" size="large"
-  //       onClick={handleClickVerify}
-  //     >
-  //       {t("confirm")}
-  //     </Button>
-  //     </>
-  //     }
-  //     {tooManyAttemps ?
-  //     <Stack spacing={1}>
-  //       <Typography>{t("Troppi tentativi")}</Typography>
-  //       <Typography>{t("Rinvia codice tra")}</Typography>
-  //       <Typography>{timer/1000} secondi</Typography>
-  //       <Button 
-  //         disabled={(loadingResend || (tooManyAttemps && !isExpired))}
-  //         sx={{width: "fit-content", alignSelf: "center"}}
-  //         variant="contained" size="large"
-  //         onClick={handleClickResendCode}
-  //       >
-  //         {t("Rinvia")}
-  //       </Button>
-  //     </Stack>
-  //     : isExpired ?
-  //     <Stack spacing={1}>
-  //       <Typography>{t("Codice scaduto")}</Typography>
-  //       <Button 
-  //         disabled={loadingResend}
-  //         sx={{width: "fit-content", alignSelf: "center"}}
-  //         variant="contained" size="large"
-  //         onClick={handleClickResendCode}
-  //       >
-  //         {t("Rinvia codice")}
-  //       </Button>
-  //     </Stack>
-  //     :
-  //     <Typography>{timer/1000} secondi</Typography>
-  //     }
-  //   </Stack>
-  // )
 }
 
-export default OtpVerificationContent
+export default VerifyCardOtp
