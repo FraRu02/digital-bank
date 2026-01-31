@@ -33,6 +33,7 @@ abstract class CardController {
           const bankAccountId = req.body.bankAccountId;
           const bankAccount = await BankAccountModel.getInstance().getById(bankAccountId);
           if(bankAccount.userId.toString() !== req.user?.id) throw new Error("You are not the owner of this bankAccount");
+          if(bankAccount.status !== BankAccountStatus.active) throw new Error("This bankAccount is not active");
           const bankAccountCards = await CardModel.getInstance().getMany({bankAccountId});
           if(bankAccountCards.length >= 4) throw new Error("Maximum 4 cards per bank account");
           newCard = await CardModel.getInstance().create([{

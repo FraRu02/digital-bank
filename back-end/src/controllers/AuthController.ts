@@ -7,6 +7,7 @@ import ResendEmail from "@/classes/ResendEmail";
 import Otp from "@/classes/Otp";
 import bcrypt from "bcrypt";
 import UserController from "./UserController";
+import Utilities from "@/classes/Utilities";
 
 abstract class AuthController {
 
@@ -53,21 +54,23 @@ abstract class AuthController {
   static async signin(req:SigninRequest, res:Response):Promise<void> {
     const {email} = req.body;
     try {
-      const otp = await Otp.generate();
-      const newUser = await UserModel.getInstance().create([{
-        ...req.body,
-        role: UserRole.member,
-        otpCodeHash: otp.otpCodeHash,
-        otpExpiresAt: otp.otpExpiresAt,
-        otpAttempts: otp.otpAttempts
-      }]).then((res) => res[0]);
-      await ResendEmail.getInstance().sendEmail({
-        to: email,
-        subject: 'Verifica email',
-        html: `Il tuo codice di verifica è: <strong>${otp.otp}</strong>`,
+      await Utilities.followSession(null, async(session) => {
+        const otp = await Otp.generate();
+        const newUser = await UserModel.getInstance().create([{
+          ...req.body,
+          role: UserRole.member,
+          otpCodeHash: otp.otpCodeHash,
+          otpExpiresAt: otp.otpExpiresAt,
+          otpAttempts: otp.otpAttempts
+        }]).then((res) => res[0]);
+        await ResendEmail.getInstance().sendEmail({
+          to: email,
+          subject: 'Verifica email',
+          html: `Il tuo codice di verifica è: <strong>${otp.otp}</strong>`,
+        });
+        res.cookie("temp_token", JwtController.generateTempJwt(newUser.id), { httpOnly: true, secure: false });
+        res.status(200).send({...newUser.toJSON(), otpCodeHash: undefined});
       });
-      res.cookie("temp_token", JwtController.generateTempJwt(newUser.id), { httpOnly: true, secure: false });
-      res.status(200).send({...newUser.toJSON(), otpCodeHash: undefined});
     } catch (error:any) {
       console.error(error);
       res.status(400).send(error.message)

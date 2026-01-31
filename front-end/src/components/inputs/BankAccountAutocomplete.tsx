@@ -1,4 +1,4 @@
-import BankAccount, { type BankAccountProps } from '@/src/classes/BankAccount';
+import BankAccount, { BankAccountStatus, type BankAccountProps } from '@/src/classes/BankAccount';
 import { Autocomplete, Checkbox, TextField, type AutocompleteProps } from '@mui/material'
 import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useMemo } from 'react';
@@ -30,9 +30,9 @@ const BankAccountAutocomplete:React.FC<BankAccountAutocompleteProps> = ({sx, opt
     enabled: !Boolean(options)
   });
 
-  const OPTIONS = useMemo(() => {
+  const filteredOprions = useMemo(() => {
     if(options) options.map((e) => e.id);
-    else if(bankAccounts) return bankAccounts.map((e) => e.id);
+    else if(bankAccounts) return bankAccounts.filter(e => e.status === BankAccountStatus.active).map((e) => e.id);
     return [];
   }, [options, bankAccounts])
 
@@ -45,7 +45,7 @@ const BankAccountAutocomplete:React.FC<BankAccountAutocompleteProps> = ({sx, opt
     <Autocomplete
       sx={{ width: 300, ...sx }}
       loading={isFetching}
-      options={OPTIONS}
+      options={filteredOprions}
       {...otherProps}
       renderValue={(option) => getLabel(option as string)}
       renderInput={(params) => 

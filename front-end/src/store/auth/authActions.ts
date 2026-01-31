@@ -19,6 +19,7 @@ export const signin = async(name:string, lastname:string, email:string, taxCode:
 export const logout = async():Promise<void> => {
   queryClient.clear();
   SocketIo.instance?.disconnect();
+  localStorage.removeItem("selectedCard");
   return await store.dispatch(authSliceActions.logout()).unwrap();
 }
 

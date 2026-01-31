@@ -1,5 +1,5 @@
 import { Box, Button, Grid, Stack, Typography } from '@mui/material';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import BankingInfoCard from '@/src/components/BankingInfoCard';
 import CardsList from '@/src/components/Dashboard/CardsList';
 import { useDashboardView } from '@/src/views/Dashboard';
@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import type { StoreProps } from '@/src/store/rootReducer';
 import VerifyCardOtpModal from './VerifyCardOtpModal';
-import { CardStatus } from '@/src/classes/Card';
+import { CardStatus, type BaseCardProps } from '@/src/classes/Card';
 
 
 const DashboardContent = () => {
@@ -44,20 +44,34 @@ const DashboardContent = () => {
   }, [stackRef.current])
 
   useEffect(() => {
-    if(!fetchingCards && cards && cards.length > 0) {
-      if(!selectedCard) {
+    if(cards && cards.length > 0) {
+      const cardId = localStorage.getItem("selectedCard");
+      const localStorageCard = cardId ? cards.find(e => e.id === cardId): null;
+      if(localStorageCard) setSelectedCard(localStorageCard);
+      else {
         const firstAvailableCard = cards.find((e) => e.status === CardStatus.active);
-        if(firstAvailableCard) setSelectedCard(firstAvailableCard);
+        if(firstAvailableCard) handleSelectCard(firstAvailableCard);
       }
+    }
+  }, [cards]);
+
+  useEffect(() => {
+    if(!loadingCards && cards && cards.length > 0) {
       const firstPendingCard = cards.find((e) => e.status === CardStatus.pending_verification) ?? null;
       setCardToVerify(firstPendingCard);
     }
-  }, [selectedCard, cards]);
+  }, [loadingCards])
 
 
   useEffect(() => {
     setOpenVerifyCardOtpModal(Boolean(cardToVerify));
   }, [cardToVerify])
+
+
+  const handleSelectCard = useCallback((card:BaseCardProps) => {
+    setSelectedCard(card);
+    localStorage.setItem("selectedCard", card.id);
+  }, [])
 
   if(loadingCards) {
     return (
@@ -93,7 +107,7 @@ const DashboardContent = () => {
             list={cards}
             selected={selectedCard}
             loadingCardId={(fetchingSelectedCard||fetchingBankAccount||fetchingIncExp) ? selectedCard?.id : null}
-            onClickItem={setSelectedCard}
+            onClickItem={handleSelectCard}
             onClickItemVerify={(card) => setCardToVerify(card)}
           />
         </Grid>

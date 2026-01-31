@@ -44,7 +44,9 @@ const formSchema = object({
     dateOfBirth: string(),
     taxCode: string().required(),
     email: string().email().required(),
-    phoneNumber: string().required(),
+    phoneNumber: string()
+      .matches(/^\(\+\d{2}\)\s\d{3}\s\d{3}\s\d{4}$/)
+      .required(),
     address: object({
       properties: object({
         formatted: string().required()

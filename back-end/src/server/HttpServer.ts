@@ -11,9 +11,11 @@ import userRouter from "@/routes/UserRouter";
 import holderRouter from "@/routes/HolderRouter";
 import alertRouter from "@/routes/AlertRouter";
 // import userRouter from "@/routes/userRouter";
+
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const app = express();
+app.set("trust proxy", 1)
 
 app.use(express.json());
 app.use(cors({

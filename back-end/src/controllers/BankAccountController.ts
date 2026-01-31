@@ -108,9 +108,10 @@ abstract class BankAccountController {
       const bankAccount = await BankAccountModel.getInstance().getById(id);
       if(bankAccount.userId.toString() !== req.user!.id) return res.status(401).send("This bank account is not yours");
       const now = new Date();
-      const startOfYear = new Date(now.getFullYear(), 0, 1);
+      // const startOfYear = new Date(now.getFullYear(), 0, 1);
+      const startOfMonth = new Date(now).setDate(1);
       const transactions = await TransactionModel.getInstance().getByBankAccountId([id], {
-        createdAt: { $gte: startOfYear },
+        createdAt: { $gte: startOfMonth },
       })
 
       const incExp = {inc: 0, exp: 0};

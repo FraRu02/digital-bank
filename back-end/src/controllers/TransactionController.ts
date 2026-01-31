@@ -1,8 +1,8 @@
 import { Response } from "express";
 import TransactionModel, { TransactionDocument, TransactionType } from "@/models/TransactionModel";
 import { type GetMeRequest, type GetRequest, type CreateRequest, DeleteRequest } from "@/schemas/TransactionSchema";
-import BankAccountModel from "@/models/BankAccountModel";
-import CardModel, { CardType } from "@/models/CardModel";
+import BankAccountModel, { BankAccountStatus } from "@/models/BankAccountModel";
+import CardModel, { CardStatus, CardType } from "@/models/CardModel";
 import { getIO } from "@/server/SocketIOServer";
 import AlertModel from "@/models/AlertModel";
 import { UserProps } from "@/models/UserModel";
@@ -15,16 +15,19 @@ abstract class TransactionController {
     try {
       const sourceCard = await CardModel.getInstance().getOne({number: sourceCardNumber});
       if(sourceCard.userId.toString() !== req.user!.id) throw new Error("You are not the owner of this card");
+      if(sourceCard.status !== CardStatus.active) throw new Error("Source card is not active");
       let newTransaction:TransactionDocument[], destinationUser:UserProps;
       if(type===TransactionType.transfer) {
         const {destinationIban, destinationCardNumber} = req.body;
         if(CardModel.isDebitType(sourceCard)) {
           const {bankAccountId} = sourceCard;
           const sourceAccount = await BankAccountModel.getInstance().getById(bankAccountId.toString());
+          if(sourceAccount.status !== BankAccountStatus.active) throw new Error("Source bankAccount is not active");
           if(sourceAccount.balance - Import < 0) throw new Error("You don't have enough money");
           if(destinationIban) { // BtoB
             const destinationAccount = await (await BankAccountModel.getInstance().getOne({iban: destinationIban})).populate("userId", ["id", "name", "lastname"]);
             destinationUser = destinationAccount.userId as any;
+            if(destinationAccount.status !== BankAccountStatus.active) throw new Error("Destination bankAccount is not active");
             if(sourceAccount.id === destinationAccount.id) throw new Error("You can't transfer money to the same account");
             newTransaction = await TransactionModel.getInstance().create([{
               sourceCardId: sourceCard.id,
@@ -36,6 +39,7 @@ abstract class TransactionController {
             }]);
           }else if(destinationCardNumber) { // BtoC
             const destinationCard = await (await CardModel.getInstance().getOne({number: destinationCardNumber})).populate("userId", ["id", "name", "lastname"]);
+            if(destinationCard.status !== CardStatus.active) throw new Error("Destination card is not active");
             if(destinationCard.type === CardType.debit) throw new Error("You can't transfer money to a debit card");
             destinationUser = destinationCard.userId as any;
             newTransaction = await TransactionModel.getInstance().create([{
@@ -51,6 +55,7 @@ abstract class TransactionController {
           if(sourceCard.balance - Import < 0) throw new Error("You don't have enough money");
           if(destinationIban) { // CtoB
             const destinationAccount = await (await BankAccountModel.getInstance().getOne({iban: destinationIban})).populate("userId", ["id", "name", "lastname"]);
+            if(destinationAccount.status !== BankAccountStatus.active) throw new Error("Destination bankAccount is not active");
             destinationUser = destinationAccount.userId as any;
             newTransaction = await TransactionModel.getInstance().create([{
               sourceCardId: sourceCard.id,
@@ -59,8 +64,9 @@ abstract class TransactionController {
               type,
               description: req.body.description
             }]);
-          }else if(destinationCardNumber) {
-            const destinationCard = await (await CardModel.getInstance().getOne({number: destinationCardNumber})).populate("userId", ["id", "name", "lastname"]);;
+          }else if(destinationCardNumber) { // CtoC
+            const destinationCard = await (await CardModel.getInstance().getOne({number: destinationCardNumber})).populate("userId", ["id", "name", "lastname"]);
+            if(destinationCard.status !== CardStatus.active) throw new Error("Destination card is not active");
             if(destinationCard.type === CardType.debit) throw new Error("You can't transfer money to a debit card");
             if(sourceCard.id === destinationCard.id) throw new Error("You can't transfer money to the same card");
             destinationUser = destinationCard.userId as any;
