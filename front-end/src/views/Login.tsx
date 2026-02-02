@@ -39,7 +39,7 @@ const Login = () => {
         <LanguageSwitch />
       </Stack>
       <Stack sx={{width: "100%", height: "100%", gap: "1rem"}}>
-        <Typography sx={{position: "fixed", pt: 10, zIndex: 5, mb: 3, bgcolor: "background.default", top: 0, width: "100%", textTransform: "uppercase", fontWeight: "bold", textAlign: "center"}} variant='h2' fontSize={{xs: "45px", sm: "60px"}}>Cicciobank</Typography>
+        <Typography sx={{position: "fixed", pt: 10, zIndex: 5, mb: 3, bgcolor: "background.default", top: 0, width: "100%", textTransform: "uppercase", fontWeight: "bold", textAlign: "center"}} variant='h2' fontSize={{xs: "45px", sm: "60px"}}>Nexabank</Typography>
         <Paper sx={{p: {xs: 1, sm: 3}, margin: "0 auto", mt: 22, width: "100%", flex: {xs: 1, sm: "none"}, maxWidth: {xs: "none", sm: 450}}}>
           <form onSubmit={handleSubmit}>
             <Stack spacing={2} sx={{pointerEvents: !loadingForm ? "auto" : "none"}}>

@@ -1,8 +1,6 @@
 import React, { useCallback } from 'react';
 import CustomModal from '../CustomModal';
 import VerifyCardOtp from '../Cards/VerifyCardOtp';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import Card, { type BaseCardProps } from '@/src/classes/Card';
 import { useDashboardView } from '@/src/views/Dashboard';
 
 type VerifyCardOtpModalProps = {

@@ -1,21 +1,27 @@
 import { Response } from "express";
-import { type AuthRequest } from "./AuthController";
 import HolderModel, { HolderStatus } from "@/models/HolderModel";
 import UserModel from "@/models/UserModel";
 import { type GetRequest } from "@/schemas/CardSchema";
-import { type DeleteRequest } from "@/schemas/HolderSchema";
+import { type GetMeRequest, type DeleteRequest } from "@/schemas/HolderSchema";
 
 abstract class HolderController {
 
-  static async getMe(req:AuthRequest, res:Response) {
+  static async getMe(req:GetMeRequest, res:Response) {
     try {
+      const {id} = req.params;
       const user = req.user!;
-      const holders = await UserModel.getInstance().getOne({_id: user.id}, {holders: 1});
-      const populated = await holders.populate({
-        path: "holders",
-        match: { status: HolderStatus.active }
-      });
-      res.status(200).send(populated.holders)
+      if(id) {
+        const holder = await HolderModel.getInstance().getById(id);
+        res.status(200).send(holder);
+      }else {
+        const holders = await UserModel.getInstance().getOne({_id: user.id}, {holders: 1});
+        const populated = await holders.populate({
+          path: "holders",
+          match: { status: HolderStatus.active }
+        });
+        res.status(200).send(populated.holders)
+
+      }
     } catch (error:any) {
       res.status(400).send(error.message);
     }

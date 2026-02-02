@@ -1,5 +1,5 @@
 require("dotenv").config();
-import express from "express";
+import express, { Request, Response } from "express";
 import { PATH } from "../pathPermissionsConfig";
 import http from "http";
 import authRouter from "@/routes/AuthRouter";
@@ -15,11 +15,12 @@ import alertRouter from "@/routes/AlertRouter";
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const app = express();
-app.set("trust proxy", 1)
+// app.set("trust proxy", 1)
 
 app.use(express.json());
 app.use(cors({
   origin: "https://nexabank.it",
+  // origin: "http://localhost:5173",
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true
 }));

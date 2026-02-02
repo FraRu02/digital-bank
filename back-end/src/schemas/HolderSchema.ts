@@ -39,5 +39,6 @@ export const deleteSchema = z.object({
   holderIds: z.array(z.string()),
 }).strict();
 
+export type GetMeRequest = AuthRequest<{id?: string}, any, {}>;
 export type GetRequest = AuthRequest<{id?: string}, any, {}>;
 export type DeleteRequest = AuthRequest<{}, any, z.infer<typeof deleteSchema>>;

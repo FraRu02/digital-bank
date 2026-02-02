@@ -31,7 +31,8 @@ const CustomOtpInput:React.FC<CustomOtpInputProps> = ({...otherProps}) => {
         alignSelf: "center",
       }}
       inputStyle={{
-        width: 60, height: 60,
+        width: "100%", maxWidth: 60,
+        aspectRatio: "1",
         fontSize: 24
       }}
       isInputNum

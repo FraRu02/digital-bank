@@ -1,4 +1,4 @@
-import { Box, Button, Grid, Stack, Typography } from '@mui/material';
+import { Box, Button, Grid, Stack, Typography, useMediaQuery, useTheme } from '@mui/material';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import BankingInfoCard from '@/src/components/BankingInfoCard';
 import CardsList from '@/src/components/Dashboard/CardsList';
@@ -9,17 +9,16 @@ import AlertsChip from './AlertsChip';
 import Loading from '@/src/components/Loading';
 import image from "@/src/assets/img/new_bank_account.png";
 import CreateBankingServiceModal from '@/src/components/CreateBankingService/CreateOperaionsModal';
-import { UserRole } from '@/src/classes/User';
 import { useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
 import type { StoreProps } from '@/src/store/rootReducer';
 import VerifyCardOtpModal from './VerifyCardOtpModal';
 import { CardStatus, type BaseCardProps } from '@/src/classes/Card';
+import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 
 
 const DashboardContent = () => {
   const {t} = useTranslation();
-  const user = useSelector((state:StoreProps) => state.auth.user);
   const {bankAccountQuery, selectedCardQuery, cardsQuery, incExpQuery, selectedCard, cardToVerify, setCardToVerify, setSelectedCard} = useDashboardView();
   const {data:cards, isLoading:loadingCards, isFetching:fetchingCards} = cardsQuery;
   const {data:bankAccount, isFetching:fetchingBankAccount} = bankAccountQuery;
@@ -30,6 +29,8 @@ const DashboardContent = () => {
   const [openVerifyCardOtpModal, setOpenVerifyCardOtpModal] = useState<boolean>(false);
   const stackRef = useRef<HTMLDivElement>(null);
   const [gridHeight, setGridHeight] = useState<number>();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   useEffect(() => {
     if(!stackRef.current) return;
@@ -48,9 +49,16 @@ const DashboardContent = () => {
       const cardId = localStorage.getItem("selectedCard");
       const localStorageCard = cardId ? cards.find(e => e.id === cardId): null;
       if(localStorageCard) setSelectedCard(localStorageCard);
-      else {
+      else if(!selectedCard) {
         const firstAvailableCard = cards.find((e) => e.status === CardStatus.active);
         if(firstAvailableCard) handleSelectCard(firstAvailableCard);
+      }else {
+        const card = cards.find((e) => e.id === selectedCard.id);
+        if(card) handleSelectCard(card);
+      }
+      if(cardToVerify) {
+        const card = cards.find((e) => e.id === cardToVerify.id);
+        setCardToVerify(card ?? null);
       }
     }
   }, [cards]);
@@ -92,14 +100,11 @@ const DashboardContent = () => {
       <CreateBankingServiceModal open={openServiceModal} onClose={() => setOpenServiceModal(false)}/>
       </Box>
     )
-  }
-
-
-  return cards && (
-    <Box sx={{position: "relative", width: "100%", height: "100%", p: 1}}>
+  }else if(cards) return (
+    <Stack sx={{position: "relative", width: "100%", height: "100%", p: 1}}>
       <Stack direction={"row"} spacing={1}>
         <Typography fontWeight={"bold"} variant='h5'>Dashboard</Typography>
-        {user?.role === UserRole.member && <Button style={{marginLeft: "auto"}} variant="contained" onClick={() => setOpenServiceModal(true)}>{t("new")} +</Button>}
+        <Button style={{marginLeft: "auto"}} variant="contained" onClick={() => setOpenServiceModal(true)}>{t("new")} +</Button>
       </Stack>
       <Grid container spacing={2}>
         <Grid size={12}>
@@ -112,10 +117,20 @@ const DashboardContent = () => {
           />
         </Grid>
        {cards.length > 0 && 
+       cards.length === 1 && cards[0].status === CardStatus.pending_verification ?
+       <Grid size={12}>
+          <Stack spacing={1} alignItems={"center"}>
+            <PrivacyTipIcon sx={{fontSize: 50}}/>
+            <Typography textAlign={"center"} variant='h6'>{t("Verifica il conto per visualizzare le informazioni")}</Typography>
+
+          </Stack>
+        </Grid>
+       :
        <>
+       {!isMobile &&
         <Grid height={gridHeight} size={{xs: 12, md: 6}}>
           <AlertsChip />
-        </Grid>
+        </Grid>}
         <Grid size={{xs: 12, md: 6}}>
           <Stack ref={stackRef} spacing={2}>
             <BankingInfoCard
@@ -134,7 +149,7 @@ const DashboardContent = () => {
       <OperationsModal open={openOperationsModal} onClose={() => setOpenOperationsModal(false)}/>
       <CreateBankingServiceModal open={openServiceModal} onClose={() => setOpenServiceModal(false)}/>
       <VerifyCardOtpModal open={openVerifyCardOtpModal} onClose={() => setOpenVerifyCardOtpModal(false)}/>
-    </Box>
+    </Stack>
   )
 }
 

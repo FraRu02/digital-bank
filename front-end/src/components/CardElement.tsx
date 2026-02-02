@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Button, CircularProgress, IconButton, Paper, Stack, Typography, useTheme } from '@mui/material';
+import { Button, CircularProgress, IconButton, Paper, Stack, Typography, useTheme, type PaperProps, type SxProps, type Theme } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { CardStatus, type BaseCardProps } from '@/src/classes/Card';
 import ChipImage from "@/src/assets/img/chip_nobg.png";
@@ -12,12 +12,13 @@ import PendingIcon from '@mui/icons-material/Pending';
 
 type CardElementProps = {
   card: BaseCardProps;
+  sx?: SxProps<Theme>
   selected?: boolean;
   loading?: boolean;
   onClickVerify?: (card:BaseCardProps) => void;
 }
 
-const CardElement:React.FC<CardElementProps> = ({card, selected, loading, onClickVerify}) => {
+const CardElement:React.FC<CardElementProps> = ({sx, card, selected, loading, onClickVerify}) => {
   const {t} = useTranslation();
   const theme = useTheme();
   const [hide, setHide] = useState<boolean>(true);
@@ -36,7 +37,10 @@ const CardElement:React.FC<CardElementProps> = ({card, selected, loading, onClic
 
   if(card.status === CardStatus.pending_verification) {
     return (
-      <Paper sx={{width: 400, height: "100%", minHeight: 104, p: "1rem 2rem"}}>
+      <Paper sx={{
+        p: "1rem 2rem",
+        ...sx
+      }}>
         <Stack spacing={3}>
           <Stack spacing={1} direction={"row"} alignItems={"center"}>
             {loading ?
@@ -59,11 +63,10 @@ const CardElement:React.FC<CardElementProps> = ({card, selected, loading, onClic
       </Paper>
     )
   }else if(card.status === CardStatus.active){
-
     return (
-      <Paper sx={{width: 400, p: "1rem 2rem", bgcolor: selected ? "#1c2370" : undefined, color: textColor}}>
-        <Stack spacing={3}>
-          <Stack spacing={1} direction={"row"} alignItems={"center"}>
+      <Paper sx={{p: 1.5, bgcolor: selected ? "#1c2370" : undefined, color: textColor, ...sx}}>
+        <Stack sx={{ height: "100%"}} spacing={1} justifyContent={"space-between"}>
+          <Stack spacing={0.5} direction={"row"} alignItems={"center"}>
             {loading ?
             <CircularProgress sx={{color: "red"}} size={20}/>
             :
@@ -84,11 +87,11 @@ const CardElement:React.FC<CardElementProps> = ({card, selected, loading, onClic
             <SecretTypography hide={hide} end={-3} style={{marginLeft: "auto"}}>{card.number}</SecretTypography>
           </Stack>
           <Stack spacing={1} justifyContent={"space-between"} direction={"row"}>
-            <Stack spacing={1}>
+            <Stack spacing={0.5}>
               <Typography>{t("expires")}</Typography>
               <SecretTypography hide={hide}>{new Date(card.expire).toLocaleDateString()}</SecretTypography>
             </Stack>
-            <Stack spacing={1}>
+            <Stack spacing={0.5}>
               <Typography>CVV</Typography>
               <SecretTypography hide={hide}>{card.cvv}</SecretTypography>
             </Stack>

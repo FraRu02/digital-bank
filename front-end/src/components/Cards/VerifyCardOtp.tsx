@@ -1,4 +1,4 @@
-import { Button, CircularProgress, Stack, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import CustomOtpInput from '../inputs/CustomOtpInput';
@@ -9,6 +9,8 @@ import useFetch from '@/src/hooks/useFetch';
 import { string } from 'yup';
 import Card from '@/src/classes/Card';
 import { useQueryClient } from '@tanstack/react-query';
+import type { HolderProps } from '@/src/classes/Holder';
+import Holder from '@/src/classes/Holder';
 
 
 type VerifyCardOtpProps = {
@@ -24,11 +26,17 @@ const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
   const queryClient = useQueryClient();
   const [code, setCode] = useState<string>("");
   const [isFormValid, setIsFormValid] = useState<boolean>(false);
+  const {fetchData:fetchHolder, loading:loadingHolder, error:holderError, response: cardHolder} = useFetch<HolderProps>({autoLoading: true});
   const {fetchData:fetchVerifyOtp, loading:loadingVerify, error:verifyError, response: verifyOtpResponse} = useFetch<BaseCardProps>();
   const {fetchData:fetchResendOtp, loading:loadingResend, error:resendError, response: resendOtpResponse} = useFetch<BaseCardProps>();
-  const [timer, setTimer] = useState<number>(1000);
-  const [isExpired, setIsExpired] = useState<boolean>(false);
+  const [timer, setTimer] = useState<number>(() => {
+    const diff = new Date(card?.otpExpiresAt!).setMilliseconds(0).valueOf() - new Date().setMilliseconds(0).valueOf();
+    if(diff <= 0 || isNaN(diff)) return 0
+    return diff;
+  });
+  const [isExpired, setIsExpired] = useState<boolean>(timer <= 0);
   const [tooManyAttemps, setTooManyAttemps] = useState<boolean>(false);
+
 
   const validateForm = useCallback(async(code:string) => {
     try {
@@ -41,6 +49,11 @@ const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
       setIsFormValid(false);
     }
   }, [])
+
+  useEffect(() => {
+    if(!card) return;
+    fetchHolder(Holder.getMeById(card.holderId))
+  }, [card?.id])
   
 
   useEffect(() => {
@@ -66,7 +79,6 @@ const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
 
   useEffect(() => {
     if(!resendOtpResponse) return;
-
     queryClient.setQueryData(
       ["cards"],
       (oldData: BaseCardProps[]) => {
@@ -122,7 +134,7 @@ const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
     return `${minutes<10 ?"0" : ""}${minutes}:${seconds<10 ?"0" : ""}${seconds}`
   }, [])
 
-  return (
+  return !loadingHolder ? (
     <Stack sx={{textAlign: "center"}} spacing={2} p={2}>
       {!tooManyAttemps && !isExpired &&
       <>
@@ -132,7 +144,7 @@ const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
           <Trans
               i18nKey="view.otp_verification.verification.content_1"
               components={{ bold: <strong/> }}
-              values={{ email:  "dio@gmail.com"}}
+              values={{ email: cardHolder?.email}}
             />
          </Typography>
         <Typography>{t("view.otp_verification.verification.content_2")}.</Typography>
@@ -179,7 +191,11 @@ const VerifyCardOtp:React.FC<VerifyCardOtpProps> = ({card, onVerify}) => {
       </Button>
       </>
       } 
-      </Stack>
+    </Stack>
+  ): (
+    <Box sx={{display: "flex", height: 200, alignItems: "center", justifyContent: "center"}}>
+      <CircularProgress />
+    </Box>
   )
 
 }
