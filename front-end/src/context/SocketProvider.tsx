@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { type Socket } from 'socket.io-client';
 import type { DefaultEventsMap } from '@socket.io/component-emitter';
-import SocketIo from '../classes/SocketIo/SocketIo';
+import SocketIo from '@/src/classes/SocketIo/SocketIo';
 
 
 type SocketContextProps = Socket<DefaultEventsMap, DefaultEventsMap> | null;

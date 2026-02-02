@@ -1,5 +1,5 @@
-import React, { useEffect, useLayoutEffect, useMemo } from 'react';
-import { Navigate, Outlet, replace, useLocation, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import type { StoreProps } from './store/rootReducer';
 import { RoutePath, routes, type RouteProps } from './routesConfig';

@@ -6,10 +6,9 @@ class SocketIo {
   
   constructor(){
     if(SocketIo.instance) {
-      console.log("già esistene");
       return;
     };
-    const newSocket = io('http://localhost:3005', {
+    const newSocket = io('https://api.nexabank.it', {
       withCredentials: true, // invia i cookie HttpOnly
       autoConnect: false,    // connessione manuale
     });
