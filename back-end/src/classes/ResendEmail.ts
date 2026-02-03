@@ -30,7 +30,7 @@ class ResendEmail {
   async sendEmail(payload: Omit<CreateEmailOptions, "from">, options?: CreateEmailRequestOptions): Promise<CreateEmailResponse> {
     try {
       const response = await this.resend.emails.send({
-        from: "NexaBank <no-reply@tuodominio.com>",
+        from: "NexaBank <no-reply@nexabank.it>",
         // from: "NexaBank <onboarding@resend.dev>",
         ...payload as any,
       }, options);
