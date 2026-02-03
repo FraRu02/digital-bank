@@ -2,7 +2,7 @@ import { type UserProps } from '@/src/classes/User';
 import useFetch from '@/src/hooks/useFetch';
 import { resendOtp, verifyOtp } from '@/src/store/auth/authActions';
 import type { StoreProps } from '@/src/store/rootReducer';
-import { Button, Paper, Stack, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useSelector } from 'react-redux';
@@ -97,18 +97,19 @@ const OtpVerificationContent:React.FC = () => {
       <ThemeSwitch />
       <LanguageSwitch />
     </Stack>
-    <Paper 
+    <Box 
       sx={{
-        position: "absolute",
-        top: "50%", left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: 600
+        display: "flex",
+        width: "100%",
+        height: "100%",
+        alignItems: "center",
+        justifyContent: "center"
       }}
     >
       <Stack sx={{textAlign: "center"}} spacing={2} p={2}>
       {!tooManyAttemps && !isExpired &&
       <>
-        <img style={{width: 300, alignSelf: "center"}} src={VerifyEmailImage} />
+        <img style={{width: "100%", maxWidth: 300, alignSelf: "center"}} src={VerifyEmailImage} />
         <Typography variant="h4" fontWeight={"bold"}>{t("view.otp_verification.verification.title")}</Typography>
          <Typography>
           <Trans
@@ -162,7 +163,7 @@ const OtpVerificationContent:React.FC = () => {
       </>
       } 
       </Stack>
-    </Paper>
+    </Box>
     
     </>
   )

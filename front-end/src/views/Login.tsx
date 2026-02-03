@@ -30,6 +30,7 @@ const Login = () => {
     if(!data.error) setForm({newState: initialForm});
   }, [form]);
 
+
   if(!loading && isAuthenticated) return <Navigate to={RoutePath['/']}/> 
 
   return (
