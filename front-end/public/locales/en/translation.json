@@ -106,6 +106,7 @@
   "something_wrong": "Something went wrong",
   "owner_options": "Owner options",
   "no_notifications": "No notifications",
+  "error": "Error",
   "modal": {
     "create": {
       "bank_account": {

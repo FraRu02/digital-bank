@@ -48,7 +48,6 @@ abstract class CardController {
             otpExpiresAt: otp.otpExpiresAt,
             otpAttempts: otp.otpAttempts
           }], {session}).then(res => res[0]);
-          res.status(200).send(newCard);
         }else if(type === CardType.prepaid) {
           const userPrepaidCards = await CardModel.getInstance().getMany({userId: user.id, type: CardType.prepaid});
           if(userPrepaidCards.length >= 4) throw new Error("Maximum 4 prepaid cards");
@@ -182,13 +181,13 @@ abstract class CardController {
       if(card.otpExpiresAt < new Date()) throw new Error("OTP expired");
       if(card.otpAttempts! >= 5) throw new Error("Too many attempts");
 
-      const valid = await bcrypt.compare(otpCode, card.otpCodeHash);
+      // const valid = await bcrypt.compare(otpCode, card.otpCodeHash);
 
-      if (!valid) {
-        card.otpAttempts! += 1;
-        await card.save();
-        throw new Error("Incorrect OTP" );
-      }
+      // if (!valid) {
+      //   card.otpAttempts! += 1;
+      //   await card.save();
+      //   throw new Error("Incorrect OTP" );
+      // }
       await Utilities.followSession(null, async(session) => {
         card.status = CardStatus.active;
         await card.save({session});

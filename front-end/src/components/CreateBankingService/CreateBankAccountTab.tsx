@@ -6,16 +6,20 @@ import { useCreateBankingServiceModal } from './CreateOperaionsModal';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import BankAccount from '@/src/classes/BankAccount';
 import { toast } from 'react-toastify';
+import { useDashboardView } from '@/src/views/Dashboard';
 
 const CreateBankAccountTab:React.FC = () => {
   const queryClient = useQueryClient();
   const {t} = useTranslation();
+  const {setCardToVerifyId} = useDashboardView();
+  
   const {setIsPending, closeModal} = useCreateBankingServiceModal();
   const {mutateAsync, isPending} = useMutation({
     mutationFn: (params:any) => BankAccount.create(params),
-    onSuccess: () => {
+    onSuccess: (data) => {
       // Invalidate and refetch
-      queryClient.invalidateQueries({ queryKey: ['cards'] })
+      queryClient.invalidateQueries({ queryKey: ['cards'] });
+      setCardToVerifyId(data.newCardId);
     }
   });
 

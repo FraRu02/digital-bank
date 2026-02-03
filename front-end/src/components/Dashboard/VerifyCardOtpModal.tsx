@@ -9,16 +9,21 @@ type VerifyCardOtpModalProps = {
 }
 
 const VerifyCardOtpModal:React.FC<VerifyCardOtpModalProps> = ({open=false, onClose}) => {
-  const {cardToVerify, setCardToVerify} = useDashboardView();
+  const {cardToVerify, setCardToVerifyId, setSelectedCardId} = useDashboardView();
 
   const handleClose = useCallback(() => {
-    setCardToVerify(null);
+    setCardToVerifyId(null);
     onClose?.();
   }, [onClose])
 
+  const handleVerify = useCallback(() => {
+    setSelectedCardId(cardToVerify?.id);
+    handleClose();
+  }, [cardToVerify, handleClose])
+
   return (
     <CustomModal open={open} onClose={handleClose}>
-      <VerifyCardOtp card={cardToVerify} onVerify={onClose}/>
+      <VerifyCardOtp card={cardToVerify} onVerify={handleVerify}/>
     </CustomModal>
   )
 }

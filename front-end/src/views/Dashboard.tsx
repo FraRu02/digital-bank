@@ -1,6 +1,6 @@
 import DashboardContent from '@/src/components/Dashboard/DashboardContent';
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { createContext, useContext, useState } from 'react';
+import { useMutation, useQuery, useQueryClient, type UseMutationResult, type UseQueryResult } from '@tanstack/react-query';
+import { createContext, useContext, useMemo, useState } from 'react';
 import BankAccount, { type BankAccountProps } from '@/src/classes/BankAccount';
 import type { BaseCardProps } from '@/src/classes/Card';
 import Card from '@/src/classes/Card';
@@ -8,29 +8,50 @@ import Transaction, { type BaseTransactionProps } from '@/src/classes/Transactio
 
 type DashboardViewContextProps = {
   cardsQuery: UseQueryResult<BaseCardProps[], Error>;
+  fetchSingleCard: UseMutationResult<BaseCardProps, Error, string, unknown>;
   bankAccountQuery: UseQueryResult<BankAccountProps | null, Error>;
-  selectedCardQuery: UseQueryResult<BaseCardProps, Error>;
   incExpQuery: UseQueryResult<{inc: number, exp: number}, Error>;
   transactionsQuery: UseQueryResult<BaseTransactionProps[], Error>;
-  selectedCard?: BaseCardProps; 
-  setSelectedCard:  React.Dispatch<React.SetStateAction<BaseCardProps | undefined>>;
+  selectedCardId?: string;
+  setSelectedCardId:  React.Dispatch<React.SetStateAction<string | undefined>>;
+  selectedCard?: BaseCardProps;
+  cardToVerifyId: string|null; 
+  setCardToVerifyId: React.Dispatch<React.SetStateAction<string | null>>;
   cardToVerify: BaseCardProps|null; 
-  setCardToVerify:  React.Dispatch<React.SetStateAction<BaseCardProps | null>>;
+
 }
 const DashboardViewContext = createContext<DashboardViewContextProps|undefined>(undefined);
 export const useDashboardView = () => useContext(DashboardViewContext)!
 
 const Dashboard = () => {
-  const [selectedCard, setSelectedCard] = useState<BaseCardProps>();
-  const [cardToVerify, setCardToVerify] = useState<BaseCardProps|null>(null);
+  const queryClient = useQueryClient()
+  const [selectedCardId, setSelectedCardId] = useState<string>();
+  const [cardToVerifyId, setCardToVerifyId] = useState<string|null>(null);
   const cardsQuery = useQuery({
     queryKey: ["cards"],
     queryFn: Card.getMe
   });
-  const selectedCardQuery = useQuery({
-    queryKey: ["cards", selectedCard?.id],
-    queryFn: () => Card.getMeById(selectedCard!.id),
-    enabled: !!selectedCard,
+  const selectedCard = useMemo(() => {
+    const newSelected = cardsQuery.data?.find((e) => e.id === selectedCardId);
+    if(newSelected) localStorage.setItem("selectedCardId", newSelected.id);
+    return newSelected;
+  }, [cardsQuery.data, selectedCardId])
+
+  const cardToVerify = useMemo(() => {
+    return cardsQuery.data?.find((e) => e.id === cardToVerifyId) ?? null;
+  }, [cardsQuery.data, cardToVerifyId])
+
+  const fetchSingleCard = useMutation({
+    mutationFn: (cardId: string) => Card.getMeById(cardId),
+    onSuccess: (updatedCard) => {
+      queryClient.setQueryData<BaseCardProps[]>(["cards"], (old) => {
+        if (!old) return old;
+
+        return old.map(card =>
+          card.id === updatedCard.id ? updatedCard : card
+        );
+      });
+    },
   });
   const bankAccountQuery = useQuery({
     queryKey: ["bankAccount", selectedCard?.id],
@@ -60,14 +81,17 @@ const Dashboard = () => {
   });
 
 
+
   const value:DashboardViewContextProps = {
     cardsQuery,
+    fetchSingleCard,
     bankAccountQuery,
-    selectedCardQuery,
     incExpQuery,
     transactionsQuery,
-    selectedCard, setSelectedCard,
-    cardToVerify, setCardToVerify
+    selectedCardId, setSelectedCardId,
+    selectedCard,
+    cardToVerifyId, setCardToVerifyId,
+    cardToVerify
   }
 
   return (

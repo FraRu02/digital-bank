@@ -9,7 +9,7 @@ abstract class Otp {
     return {
       otp,
       otpCodeHash: otpHash,
-      otpExpiresAt: new Date(Date.now() + 3 * 60 * 1000),// 5 min
+      otpExpiresAt: new Date(Date.now() + 3 * 60 * 1000),// 3 min
       otpAttempts: 0
     }
   }

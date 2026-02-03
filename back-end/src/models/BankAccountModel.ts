@@ -123,10 +123,6 @@ class BankAccountModel extends BaseModel<BankAccountDocument> {
     return await Utilities.followSession(options?.session, async(session) => {
       const result = await super.deleteManyById(ids, {...options, session});
       await CardModel.getInstance().deleteMany({bankAccountId: {$in: ids}}, {...options, session});
-      await TransactionModel.getInstance().deleteMany({$or: [
-        {sourceBankAccountId: {$in: ids}},
-        {destinationBankAccountId: {$in: ids}}
-      ]})
       return result;
     });
   }
@@ -137,10 +133,6 @@ class BankAccountModel extends BaseModel<BankAccountDocument> {
       const bankAccountsIds = await this.getMany(filter, undefined, {session}).then((res) => res.map((e) => e.id));
       const result = await super.deleteMany(filter, {...options, session});
       await CardModel.getInstance().deleteMany({bankAccountId: {$in: bankAccountsIds}}, {...options, session});
-      await TransactionModel.getInstance().deleteMany({$or: [
-        {sourceBankAccountId: {$in: bankAccountsIds}},
-        {destinationBankAccountId: {$in: bankAccountsIds}}
-      ]})
       return result;
     });
   }

@@ -38,7 +38,7 @@ abstract class BankAccountController {
           otpExpiresAt: otp.otpExpiresAt,
           otpAttempts: otp.otpAttempts
         }], {session}).then((res) => res[0]);
-        await CardModel.getInstance().create([{
+        const newCard = await CardModel.getInstance().create([{
           userId: req.user!.id as any,
           holderId: holder.id,
           bankAccountId: newBankAccount.id,
@@ -49,13 +49,13 @@ abstract class BankAccountController {
           otpCodeHash: otp.otpCodeHash,
           otpExpiresAt: otp.otpExpiresAt,
           otpAttempts: otp.otpAttempts
-        }], {session})
+        }], {session}).then((res) => res[0])
         await ResendEmail.getInstance().sendEmail({
           to: holder.email,
           subject: 'Verifica conto bancario',
           html: `Il tuo codice di verifica è: <strong>${otp.otp}</strong>`,
         });
-        res.status(200).send({...newBankAccount.toJSON(), iban: undefined, balance: undefined});
+        res.status(200).send({...newBankAccount.toJSON(), newCardId: newCard.id, iban: undefined, balance: undefined});
       });
     } catch (error:any) {
       res.status(400).send(error.message);

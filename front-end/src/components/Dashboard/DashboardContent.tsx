@@ -10,8 +10,6 @@ import Loading from '@/src/components/Loading';
 import image from "@/src/assets/img/new_bank_account.png";
 import CreateBankingServiceModal from '@/src/components/CreateBankingService/CreateOperaionsModal';
 import { useTranslation } from 'react-i18next';
-import { useSelector } from 'react-redux';
-import type { StoreProps } from '@/src/store/rootReducer';
 import VerifyCardOtpModal from './VerifyCardOtpModal';
 import { CardStatus, type BaseCardProps } from '@/src/classes/Card';
 import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
@@ -19,10 +17,10 @@ import PrivacyTipIcon from '@mui/icons-material/PrivacyTip';
 
 const DashboardContent = () => {
   const {t} = useTranslation();
-  const {bankAccountQuery, selectedCardQuery, cardsQuery, incExpQuery, selectedCard, cardToVerify, setCardToVerify, setSelectedCard} = useDashboardView();
+  const {bankAccountQuery, fetchSingleCard, cardsQuery, incExpQuery, selectedCard, cardToVerify, setCardToVerifyId, setSelectedCardId} = useDashboardView();
   const {data:cards, isLoading:loadingCards, isFetching:fetchingCards} = cardsQuery;
   const {data:bankAccount, isFetching:fetchingBankAccount} = bankAccountQuery;
-  const {data:selectedCardData, isFetching:fetchingSelectedCard} = selectedCardQuery;
+  const {data:selectedCardData, isPending:fetchingSelectedCard} = fetchSingleCard;
   const {data:incExp, isFetching:fetchingIncExp} = incExpQuery;
   const [openOperationsModal, setOpenOperationsModal] = useState<boolean>(false);
   const [openServiceModal, setOpenServiceModal] = useState<boolean>(false);
@@ -45,40 +43,31 @@ const DashboardContent = () => {
   }, [stackRef.current])
 
   useEffect(() => {
-    if(cards && cards.length > 0) {
-      const cardId = localStorage.getItem("selectedCard");
-      const localStorageCard = cardId ? cards.find(e => e.id === cardId): null;
-      if(localStorageCard) setSelectedCard(localStorageCard);
-      else if(!selectedCard) {
-        const firstAvailableCard = cards.find((e) => e.status === CardStatus.active);
-        if(firstAvailableCard) handleSelectCard(firstAvailableCard);
-      }else {
-        const card = cards.find((e) => e.id === selectedCard.id);
-        if(card) handleSelectCard(card);
-      }
-      if(cardToVerify) {
-        const card = cards.find((e) => e.id === cardToVerify.id);
-        setCardToVerify(card ?? null);
-      }
-    }
-  }, [cards]);
-
-  useEffect(() => {
     if(!loadingCards && cards && cards.length > 0) {
-      const firstPendingCard = cards.find((e) => e.status === CardStatus.pending_verification) ?? null;
-      setCardToVerify(firstPendingCard);
+      const cardId = localStorage.getItem("selectedCardId");
+      const localStorageCard = cards.find((e) => e.id === cardId)
+      if(localStorageCard) setSelectedCardId(cardId!);
+      else if(!selectedCard) {
+        const firstAvailableCardId = cards.find((e) => e.status === CardStatus.active)?.id;
+        if(firstAvailableCardId) setSelectedCardId(firstAvailableCardId);
+      }
+      const firstPendingCardId = cards.find((e) => e.status === CardStatus.pending_verification)?.id ?? null;
+      setCardToVerifyId(firstPendingCardId);
     }
-  }, [loadingCards])
+  }, [loadingCards]);
+
+  useEffect(() => {
+    selectedCard && fetchSingleCard.mutate(selectedCard.id);
+  }, [selectedCard?.id])
 
 
   useEffect(() => {
-    setOpenVerifyCardOtpModal(Boolean(cardToVerify));
-  }, [cardToVerify])
+    cardToVerify && setOpenVerifyCardOtpModal(Boolean(cardToVerify));
+  }, [cardToVerify?.id])
 
 
   const handleSelectCard = useCallback((card:BaseCardProps) => {
-    setSelectedCard(card);
-    localStorage.setItem("selectedCard", card.id);
+    setSelectedCardId(card.id);
   }, [])
 
   if(loadingCards) {
@@ -112,8 +101,8 @@ const DashboardContent = () => {
             list={cards}
             selected={selectedCard}
             loadingCardId={(fetchingSelectedCard||fetchingBankAccount||fetchingIncExp) ? selectedCard?.id : null}
-            onClickItem={handleSelectCard}
-            onClickItemVerify={(card) => setCardToVerify(card)}
+            onClickItem={(e) => setSelectedCardId(e.id)}
+            onClickItemVerify={(card) => setCardToVerifyId(card.id)}
           />
         </Grid>
        {cards.length > 0 && 

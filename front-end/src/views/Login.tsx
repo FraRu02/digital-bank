@@ -3,7 +3,7 @@ import { useSelector } from 'react-redux';
 import type { StoreProps } from '../store/rootReducer';
 import { Link, Navigate } from 'react-router-dom';
 import { RoutePath } from '../routesConfig';
-import { Box, Button, CircularProgress, Paper, Link as MuiLink, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Paper, Link as MuiLink, Stack, TextField, Typography, FormHelperText } from '@mui/material';
 import { login } from '@/src/store/auth/authActions';
 import useForm from '@/src/hooks/useForm';
 import PasswordField from '@/src/components/inputs/PasswordField';
@@ -20,7 +20,7 @@ const initialForm = {
 const Login = () => {
   const {loading, isAuthenticated} = useSelector((state:StoreProps) => state.auth);
   const {t} = useTranslation();
-  const {form, setForm, loading:loadingForm, onSend} = useForm(initialForm);
+  const {form, setForm, loading:loadingForm, error, onSend} = useForm(initialForm);
   const {email, password} = form;
   const [showPassword, setShowPassword] = useState(false);
 
@@ -51,15 +51,16 @@ const Login = () => {
                 showPassword={showPassword} 
                 onTogglePassword={() => setShowPassword(prev => !prev)}
               />
-                <Typography textAlign={"center"}>
-                  {t("view.login.link_text") + " "} 
-                  <MuiLink 
-                    component={Link} 
-                    to={"/signin"}
-                  >
-                    {t("signin")}
-                  </MuiLink>
-                </Typography>
+              {error && <FormHelperText error>{t("error")}</FormHelperText>}
+              <Typography textAlign={"center"}>
+                {t("view.login.link_text") + " "} 
+                <MuiLink 
+                  component={Link} 
+                  to={"/signin"}
+                >
+                  {t("signin")}
+                </MuiLink>
+              </Typography>
               <Button size="large" variant="contained" disabled={loadingForm} type="submit" endIcon={loadingForm && <CircularProgress size={20}/>}>{t("login")}</Button>
             </Stack>
           </form>

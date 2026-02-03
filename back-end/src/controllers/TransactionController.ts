@@ -16,7 +16,7 @@ abstract class TransactionController {
       const sourceCard = await CardModel.getInstance().getOne({number: sourceCardNumber});
       if(sourceCard.userId.toString() !== req.user!.id) throw new Error("You are not the owner of this card");
       if(sourceCard.status !== CardStatus.active) throw new Error("Source card is not active");
-      let newTransaction:TransactionDocument[], destinationUser:UserProps;
+      let newTransaction:TransactionDocument[], destinationUser!:UserProps;
       if(type===TransactionType.transfer) {
         const {destinationIban, destinationCardNumber} = req.body;
         if(CardModel.isDebitType(sourceCard)) {
@@ -88,16 +88,16 @@ abstract class TransactionController {
         sender: {name: req.user!.name, lastname: req.user!.lastname},
         beneficiary: {name: destinationUser!.name, lastname: destinationUser!.lastname},
       }];
-      res.status(200).send(populatedTransaction);
-      const newAlert = await AlertModel.getInstance().create([{
-        userId: destinationUser!.id.toString() as any,
-        title: "Nuova entrata",
-        content: `Hai ricevuto ${Import}€ da ${req.user!.name} ${req.user!.lastname}`,
-        senderDescription: description,
-      }])
       if(req.user?.id !== destinationUser!.id.toString()) {
+        const newAlert = await AlertModel.getInstance().create([{
+          userId: destinationUser!.id.toString() as any,
+          title: "Nuova entrata",
+          content: `Hai ricevuto ${Import}€ da ${req.user!.name} ${req.user!.lastname}`,
+          senderDescription: description,
+        }])
         getIO().to(`user:${destinationUser!.id.toString()}`).emit("new-transaction", newAlert[0]);
       }
+      res.status(200).send(populatedTransaction);
     } catch (error:any) {
       res.status(400).send(error.message)
     }

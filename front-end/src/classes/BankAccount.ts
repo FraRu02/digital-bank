@@ -24,7 +24,7 @@ abstract class BankAccount {
     return await server.get(`/bankAccounts/me/${id}/incExp`).then((res) => res.data);
   }
 
-  static async create(data:{holder: HolderProps}):Promise<BankAccountProps> {
+  static async create(data:{holder: HolderProps}):Promise<BankAccountProps & {newCardId: string}> {
     await Utilities.sleep(1000);
     return await server.post("/bankAccounts/me", {
       ...data
