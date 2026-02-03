@@ -1,43 +1,21 @@
 import { Box, Paper, Stack, Typography } from '@mui/material';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import AlertsList from '@/src/components/Alerts/AlertsList';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import Alert, { type AlertProps } from '@/src/classes/Alert';
-import { useSocket } from '@/src/context/SocketProvider';
-import { toast } from 'react-toastify';
 import NotificationsIcon from '@mui/icons-material/Notifications';
 
 const AlertsChip:React.FC = () => {
   const {t} = useTranslation();
-  const socket = useSocket();
-  const queryClient = useQueryClient();
+
   const {data, isFetching} = useQuery<AlertProps[]>({
     queryKey: ["alerts"],
     queryFn: Alert.getMe
   });
 
 
-  useEffect(() => {
 
-    socket.on("new-transaction", (data:AlertProps) => {
-      toast.success(data.title);
-      queryClient.invalidateQueries({ queryKey: ['transactions'] })
-      queryClient.invalidateQueries({ queryKey: ['bankAccount'] })
-      queryClient.invalidateQueries({ queryKey: ['incExp'] })
-      queryClient.setQueryData(
-        ["alerts"],
-        (oldData: any) => {
-          if (!oldData) return [data];
-          return [data, ...oldData];
-        }
-      );
-    })
-
-    return () => {
-      socket.off("new-transaction");
-    }
-  }, [])
 
   return (
     <AlertsList.Root alerts={data} loading={isFetching}>
