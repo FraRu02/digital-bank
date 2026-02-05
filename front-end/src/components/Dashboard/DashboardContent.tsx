@@ -60,15 +60,9 @@ const DashboardContent = () => {
     selectedCard && fetchSingleCard.mutate(selectedCard.id);
   }, [selectedCard?.id])
 
-
   useEffect(() => {
     cardToVerify && setOpenVerifyCardOtpModal(Boolean(cardToVerify));
   }, [cardToVerify?.id])
-
-
-  const handleSelectCard = useCallback((card:BaseCardProps) => {
-    setSelectedCardId(card.id);
-  }, [])
 
   if(loadingCards) {
     return (
@@ -111,7 +105,6 @@ const DashboardContent = () => {
           <Stack spacing={1} alignItems={"center"}>
             <PrivacyTipIcon sx={{fontSize: 50}}/>
             <Typography textAlign={"center"} variant='h6'>{t("Verifica il conto per visualizzare le informazioni")}</Typography>
-
           </Stack>
         </Grid>
        :

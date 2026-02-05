@@ -2,8 +2,7 @@ import axios from "axios";
 import { refreshToken } from "./store/auth/authActions";
 
 const server = axios.create({
-  baseURL: "https://api.nexabank.it/api",
-  // baseURL: "http://localhost:3005/api",
+  baseURL: import.meta.env.VITE_SERVER_API_PATH,
   headers: {
     'Content-Type': 'application/json',
   },

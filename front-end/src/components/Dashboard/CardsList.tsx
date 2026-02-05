@@ -14,6 +14,7 @@ type CardsListProps = {
 const CardsList:React.FC<CardsListProps> = ({list, selected, loadingCardId, onClickItem, onClickItemVerify}) => {
   const carouselRef = useRef<HTMLDivElement|null>(null);
   const [gridSize, setGridSize] = useState<number>(2);
+  const [carouselView, setCarouselView] = useState<number>(0);
 
 
   useEffect(() => {
@@ -39,6 +40,11 @@ const CardsList:React.FC<CardsListProps> = ({list, selected, loadingCardId, onCl
       observer.disconnect();
     }
   }, [carouselRef.current])
+
+  useEffect(() => {
+    console.log(selected);
+    if(!selected) return;
+  }, [selected])
 
   return (
     <Carousel.Root>
@@ -67,58 +73,10 @@ const CardsList:React.FC<CardsListProps> = ({list, selected, loadingCardId, onCl
             />
            </Carousel.Item>
         )
-        
         )}
       </Carousel.Content>
     </Carousel.Root>
   )
-  // return (
-    
-  //   <List sx={{ display: 'flex', overflowX: "auto", pt: 1, pb: 1, m: 0, gap: "1rem" }}  disablePadding>
-  //     {list.map((el) => el.status === CardStatus.active ? (
-  //       <Box key={el.id} sx={{cursor: "pointer"}} onClick={() => onClickItem?.(el)}>
-  //         <CardElement
-  //           card={el}
-  //           selected={selected?.id === el.id}
-  //           loading={loadingCardId === el.id}
-  //         />
-  //       </Box>
-  //     ) : el.status === CardStatus.pending_verification && (
-  //       <>
-  //         <CardElement
-  //           key={el.id+"1"}
-  //           card={el}
-  //           selected={selected?.id === el.id}
-  //           loading={loadingCardId === el.id}
-  //           onClickVerify={onClickItemVerify}
-  //         />
-
-  //         <CardElement
-  //         key={el.id+"2"}
-  //           card={el}
-  //           selected={selected?.id === el.id}
-  //           loading={loadingCardId === el.id}
-  //           onClickVerify={onClickItemVerify}
-  //         />
-  //         <CardElement
-  //         key={el.id+"3"}
-  //           card={el}
-  //           selected={selected?.id === el.id}
-  //           loading={loadingCardId === el.id}
-  //           onClickVerify={onClickItemVerify}
-  //         />
-  //         <CardElement
-  //         key={el.id+"4"}
-  //           card={el}
-  //           selected={selected?.id === el.id}
-  //           loading={loadingCardId === el.id}
-  //           onClickVerify={onClickItemVerify}
-  //         />
-  //       </>
-  //     )
-  //   )}
-  //   </List>
-  // )
 }
 
 export default CardsList
