@@ -8,8 +8,7 @@ class SocketIo {
     if(SocketIo.instance) {
       return;
     };
-    const newSocket = io('/', {
-      path: import.meta.env.VITE_SERVER_SOCKET_PATH,
+    const newSocket = io(import.meta.env.VITE_SERVER_SOCKET_PATH, {
       withCredentials: true, // invia i cookie HttpOnly
       autoConnect: false,    // connessione manuale
     });
