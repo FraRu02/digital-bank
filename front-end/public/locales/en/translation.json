@@ -70,12 +70,16 @@
   "status": "Status",
   "active": "Active",
   "pending_verification": "Pending verification",
+  "verify_card": "Verify card",
   "view": {
     "signin": {
       "link_text": "Do you have an account?"
     },
     "login": {
       "link_text": "Don't have an account?"
+    },
+    "dashboard": {
+      "verify_otp_for_info": "Verify your bank account to view information"
     },
     "otp_verification": {
       "verification": {

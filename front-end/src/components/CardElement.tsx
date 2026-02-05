@@ -56,7 +56,7 @@ const CardElement:React.FC<CardElementProps> = ({sx, card, selected, loading, on
             <Button
               onClick={() => {console.log(card); onClickVerify?.(card)}}
             >
-              Verifica carta
+              {t("verify_card")}
             </Button>
           </Stack>
         </Stack>

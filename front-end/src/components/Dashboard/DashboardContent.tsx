@@ -104,7 +104,7 @@ const DashboardContent = () => {
        <Grid size={12}>
           <Stack spacing={1} alignItems={"center"}>
             <PrivacyTipIcon sx={{fontSize: 50}}/>
-            <Typography textAlign={"center"} variant='h6'>{t("Verifica il conto per visualizzare le informazioni")}</Typography>
+            <Typography textAlign={"center"} variant='h6'>{t("view.dashboard.verify_otp_for_info")}</Typography>
           </Stack>
         </Grid>
        :

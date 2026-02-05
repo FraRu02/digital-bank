@@ -70,12 +70,17 @@
   "status": "Stato",
   "active": "Attivo",
   "pending_verification": "In fase di verifica",
+  "verify_card": "Verifica carta",
+
   "view": {
     "signin": {
       "link_text": "Hai un account?"
     },
     "login": {
       "link_text": "Non hai un account?"
+    },
+    "dashboard": {
+      "verify_otp_for_info": "Verifica il conto bancario per visualizzare le informazioni"
     },
     "otp_verification": {
       "verification": {
