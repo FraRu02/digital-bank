@@ -16,29 +16,24 @@ type CreateCardProps = {
 abstract class Card {
 
   static async create(data: CreateCardProps):Promise<BaseCardProps> {
-    await Utilities.sleep(1000);
     return await server.post("/cards/me", {
       ...data
     }).then((res) => res.data);
   }
 
   static async getAll():Promise<BaseCardProps[]> {
-    await Utilities.sleep(1000);
     return await server.get("/cards").then((res) => res.data);
   }
 
   static async getMe():Promise<BaseCardProps[]> {
-    await Utilities.sleep(1000);
     return await server.get("/cards/me").then((res) => res.data?.reverse?.());
   }
 
   static async getMeById(id: string):Promise<BaseCardProps> {
-    await Utilities.sleep(1000);
     return await server.get(`/cards/me/${id}`).then((res) => res.data);
   }
 
   static async getMeIncExp(id: string):Promise<{inc: number, exp: number}> {
-    await Utilities.sleep(1000);
     return await server.get(`/cards/me/${id}/incExp`).then((res) => res.data);
   }
 
@@ -47,19 +42,16 @@ abstract class Card {
   }
 
   static async delete(id: string|string[]):Promise<void> {
-    await Utilities.sleep(1000);
     return await server.delete("/cards", {data: {
       cardIds: Array.isArray(id)? id : [id]
     }}).then((res) => res.data);
   }
 
   static async verifyOTP(data:{cardId: string, code: string}):Promise<BaseCardProps> {
-    await Utilities.sleep(1000);
     return await server.post("/cards/verifyOtp", data).then((res) => res.data);
   }
 
   static async resendOTP(cardId: string):Promise<BaseCardProps> {
-    await Utilities.sleep(1000);
     return await server.post("/cards/resendOtp", {
       cardId
     }).then((res) => res.data);

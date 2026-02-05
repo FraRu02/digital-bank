@@ -3,17 +3,14 @@ import Utilities from "./Utilities";
 
 abstract class User {
   static async get():Promise<UserProps[]> {
-    await Utilities.sleep(1000);
     return await server.get("/users").then((res) => res.data);
   }
 
   static async update(params: any):Promise<void> {
-    await Utilities.sleep(1000);
     return await server.put("/users", params).then((res) => res.data);
   }
 
   static async delete(id: string|string[]): Promise<void> {
-    await Utilities.sleep(1000);
     return await server.delete("/users", {data: {
       userIds: Array.isArray(id) ? id : [id]
     }}).then((res) => res.data);

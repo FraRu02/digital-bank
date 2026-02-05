@@ -8,12 +8,10 @@ type CreateTransactionParams =
 abstract class Transaction {
 
   static async getAll():Promise<BaseTransactionProps[]> {
-    await Utilities.sleep(1000);
     return await server.get("/transactions").then((res) => res.data);
   }
 
   static async create(params: CreateTransactionParams):Promise<BaseTransactionProps[]> {
-    await Utilities.sleep(1000);
     return await server.post("/transactions", {
       ...params,
       type: TransactionType.transfer
@@ -21,7 +19,6 @@ abstract class Transaction {
   }
 
   static async getByBankAccountId(bankAccountId:string):Promise<BaseTransactionProps[]> {
-    await Utilities.sleep(1000);
     return await server.get("/transactions/me", {
       params: {
         bankAccountId
@@ -30,7 +27,6 @@ abstract class Transaction {
   }
 
   static async getByCardId(cardId:string):Promise<BaseTransactionProps[]> {
-    await Utilities.sleep(1000);
     return await server.get("/transactions/me", {
       params: {
         cardId
@@ -39,7 +35,6 @@ abstract class Transaction {
   }
 
   static async delete(id: string|string[]): Promise<void> {
-    await Utilities.sleep(1000);
     return await server.delete("/transactions", {data: {
       transactionIds: Array.isArray(id) ? id : [id]
     }}).then((res) => res.data);

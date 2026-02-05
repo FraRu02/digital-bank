@@ -5,22 +5,22 @@ import type { AddressProps } from "@/src/components/inputs/AddressAutocomplete";
 abstract class Holder {
 
   static async getMe():Promise<HolderProps[]> {
-    await Utilities.sleep(1000);
+    
     return await server.get("/holders/me").then((res) => res.data);
   }
 
   static async getMeById(id: string):Promise<HolderProps> {
-    await Utilities.sleep(1000);
+    
     return await server.get(`/holders/me/${id}`).then((res) => res.data);
   }
 
   static async getAll():Promise<HolderProps[]> {
-    await Utilities.sleep(1000);
+    
     return await server.get("/holders").then((res) => res.data);
   }
 
   static async delete(id: string|string[]): Promise<void> {
-    await Utilities.sleep(1000);
+    
     return await server.delete("/holders", {data: {
       holderIds: Array.isArray(id) ? id : [id]
     }}).then((res) => res.data);
