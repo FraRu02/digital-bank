@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import CardElement from '@/src/components/CardElement';
 import { CardStatus, type BaseCardProps } from '@/src/classes/Card';
 import Carousel from '@/src/components/Carousel';
@@ -41,13 +41,15 @@ const CardsList:React.FC<CardsListProps> = ({list, selected, loadingCardId, onCl
     }
   }, [carouselRef.current])
 
-  useEffect(() => {
-    console.log(selected);
+  useLayoutEffect(() => {
     if(!selected) return;
-  }, [selected])
+    const index = list.findIndex((e) => selected.id === e.id);
+    const viewIndex = index ? Math.floor(index/gridSize) : 0;
+    setCarouselView(viewIndex);
+  }, [selected, gridSize])
 
   return (
-    <Carousel.Root>
+    <Carousel.Root viewIndex={carouselView}>
       <Carousel.Content ref={carouselRef} sx={{pt: 1, m: 0}}>
         {list.map((el) => el.status === CardStatus.active ? (
           <Carousel.Item 

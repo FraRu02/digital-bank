@@ -8,7 +8,7 @@ export default defineConfig({
   plugins: [react(), tsconfigPaths()],
   server: {
     proxy: {
-      '/': {
+      '/socket.io': {
         target: 'https://api.nexabank.it',
         changeOrigin: true,
         ws: true, // ← 🔥 fondamentale per socket.io

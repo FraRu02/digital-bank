@@ -1,3 +1,5 @@
+import type React from "react";
+
 abstract class Utilities {
   static async sleep(timeout:number):Promise<void> {
     return await new Promise((resolve, reject) => {
@@ -16,6 +18,16 @@ abstract class Utilities {
       }
     })
     return newObject;
+  }
+
+  static mergeRefs<T>(...refs: (React.Ref<T> | undefined)[]): React.RefCallback<T> {
+    return (value: T) => {
+      refs.forEach(ref => {
+        if (!ref) return;
+        if (typeof ref === "function") ref(value);
+        else (ref as React.RefObject<T | null>).current = value;
+      });
+    };
   }
 
   static deepCopyObjects<T extends {}>(object: T):T {
