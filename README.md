@@ -73,3 +73,7 @@ npm start
 # Frontend
 npm install
 npm run dev
+```
+**Nota**  
+Il progetto è corredato da documentazione specifica all’interno delle cartelle front-end e back-end.  
+La consultazione dei rispettivi file **README** è necessaria per comprendere la struttura dell’applicazione, configurare correttamente le variabili d’ambiente e avviare i server in modo appropriato.
