@@ -39,6 +39,7 @@ vite.config.ts            # Configurazione Vite
 | `VITE_SERVER_SOCKET_PATH` | URL del server Socket.io           |
 | `VITE_GEOAPIFY_API_KEY `  | API Key per il servizio Geoapify   |
 
+**IMPORTANTE:** Per eseguire il progetto in locale modificare il proxy nel file vite.config.ts con il rispettivo indirizzo del server. Ad esempio: http://localhost:3005
 
 # 📦 Dipendenze principali
 - React & ReactDOM: libreria principale per costruire le UI
