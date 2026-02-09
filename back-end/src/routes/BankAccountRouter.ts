@@ -3,7 +3,6 @@ import BankAccountController from "@/controllers/BankAccountController";
 import { hasUserPermissions, validateSchema } from "@/middleware/UtilitiesMiddleware";
 import { UserRole } from "@/models/UserModel";
 import { deleteSchema, createSchema } from "@/schemas/BankAccountSchema";
-import { create } from "domain";
 
 const bankAccountRouter = express.Router();
 
