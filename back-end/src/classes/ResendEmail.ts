@@ -1,7 +1,5 @@
 import { type CreateEmailOptions, type CreateEmailRequestOptions, type CreateEmailResponse, Resend } from "resend";
 
-
-
 class ResendEmail {
   private static instance:ResendEmail;
   private resend:Resend = new Resend(process.env.RESEND_KEY);
@@ -15,16 +13,6 @@ class ResendEmail {
     }
     return ResendEmail.instance;
   }
-
-  // static getInstance<T extends ResendEmail>(
-  //   this: new (...args: any[]) => T,
-  //   ...args: ConstructorParameters<typeof ResendEmail>
-  // ): T {
-  //   if (!ResendEmail.instances.has(this)) {
-  //     ResendEmail.instances.set(this, new this(...args));
-  //   }
-  //   return ResendEmail.instances.get(this);
-  // }
 
 
   async sendEmail(payload: Omit<CreateEmailOptions, "from">, options?: CreateEmailRequestOptions): Promise<CreateEmailResponse> {

@@ -1,0 +1,93 @@
+# 📖 Descrizione
+Questo progetto rappresenta il **frontend** dell'applicazione Digital Bank, sviluppato con **React**, **TypeScript**, **Vite** e **Material UI**. L'app è organizzata in moduli chiari per gestione di viste, componenti, hook, stati globali e traduzioni multilingua.
+
+
+# 🗂️ Struttura del progetto
+/public
+  /locales
+    /en
+      translation.json    # Traduzioni inglese
+    /it
+      translation.json    # Traduzioni italiano
+/src
+  /assets                 # Immagini, icone, file statici
+  /classes                # Classi e helper generici
+  /components             # Componenti riutilizzabili (bottoni, input, card, ecc.)
+  /context                # React Context per stati globali o temi
+  /hooks                  # Custom hook riutilizzabili
+  /modals                 # Modali dell'app (popup, conferme, notifiche)
+  /store                  # Redux Toolkit store e slice
+  /views                  # Pagine principali dell'app (Dashboard, Profilo, Login, ecc.)
+  App.tsx                 # Componente principale dell'app
+  axiosConfig.tsx         # Configurazione globale di axios per chiamate API
+  i18n.js                 # Configurazione internazionale (i18next)
+  main.tsx                # Entry point dell'app (ReactDOM + Router + Provider)
+  routesConfig.tsx        # Configurazione delle rotte dell'app
+  theme.ts                # Tema personalizzato Material UI
+tsconfig.json             # Configurazione TypeScript base
+tsconfig.app.json         # Configurazione TypeScript per l'app
+tsconfig.node.json        # Configurazione TypeScript per Node (Vite)
+package.json              # Dipendenze, script e metadata progetto
+vite.config.ts            # Configurazione Vite
+.env                      # Variabili di ambiente
+.gitignore                # File e cartelle ignorati da Git
+
+# ⚙️ Variabili di ambiente (.env)
+| Chiave                 | Descrizione                                      |
+| ---------------------- | ------------------------------------------------ |
+| `VITE_SERVER_API_PATH`    | URL base dell'API backend          |
+| `VITE_SERVER_SOCKET_PATH` | URL del server Socket.io           |
+| `VITE_GEOAPIFY_API_KEY `  | API Key per il servizio Geoapify   |
+
+
+# 📦 Dipendenze principali
+- React & ReactDOM: libreria principale per costruire le UI
+- TypeScript: typing statico e maggiore sicurezza del codice
+- Vite: bundler veloce e moderno
+- Material UI: libreria componenti e design system
+- Redux Toolkit & React-Redux: gestione dello stato globale
+- Axios: client HTTP per chiamate API
+- React Router DOM: gestione delle rotte SPA
+- React-i18next: supporto multilingua
+- Socket.io-client: gestione WebSocket
+- Geoapify React Geocoder Autocomplete: autocomplete geolocalizzazione
+- Dayjs: gestione date e formattazioni
+
+Dev dependencies principali:
+- ESLint e plugin React: linting e best practice
+- Typescript: compilazione e tipizzazione
+- Vite plugins: supporto React e alias dei percorsi
+
+# 🚀 Come avviare il progetto
+1. Installare le dipendenze:
+npm install
+
+2. Avviare il server di sviluppo:
+npm run dev
+
+3. Compilare il progetto per produzione:
+npm run build
+
+
+# 📝 File chiave
+- main.tsx: punto di ingresso React. Qui vengono montati App e i provider (Redux, Context, Router).
+- App.tsx: contiene il layout principale e la gestione delle rotte.
+- routesConfig.tsx: definisce tutte le rotte dell'app, pubbliche e private.
+- axiosConfig.tsx: setup globale di Axios, con interceptors per token, errori e logging.
+- i18n.js: configurazione di i18next e caricamento dei file di traduzione (/public/locales).
+- theme.ts: tema Material UI personalizzato (colori, tipografia).
+- store/: contiene slice Redux e configurazione dello store globale.
+- hooks/: custom hook riutilizzabili, ad esempio per fetch di dati, gestione form, ecc.
+- modals/: componenti modali come popup di conferma, alert o OTP.
+- components/: componenti UI riutilizzabili (Bottoni, Card, Input, Table, ecc.).
+- views/: pagine principali del progetto (Dashboard, Login, Profilo, etc.).
+
+# 🌐 Traduzioni
+Il progetto supporta multilingua tramite i18next.
+Le traduzioni sono salvate in /public/locales/en/translation.json e /public/locales/it/translation.json.
+
+# 🔗 Note aggiuntive
+- Il frontend comunica con il backend tramite Axios e le API path definite in .env.
+- Le transazioni in tempo reale (come aggiornamenti saldo) sono gestite tramite Socket.io.
+- Geoapify è utilizzato per funzionalità di autocomplete indirizzi e geolocalizzazione.
+- Tutti i percorsi e file TypeScript rispettano l'alias configurato tramite vite-tsconfig-paths.

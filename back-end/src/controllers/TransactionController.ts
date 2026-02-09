@@ -1,3 +1,15 @@
+/**
+ * Controller per la gestione delle transazioni.
+ *
+ * Fornisce operazioni:
+ * - creazione transazioni tra carte e conti (BtoB, BtoC, CtoB, CtoC)
+ * - recupero transazioni dell'utente o globale
+ * - cancellazione transazioni
+ * - invio notifiche via socket per nuove transazioni
+ *
+ * Tutti i metodi sono statici e stateless.
+ */
+
 import { Response } from "express";
 import TransactionModel, { TransactionDocument, TransactionType } from "@/models/TransactionModel";
 import { type GetMeRequest, type GetRequest, type CreateRequest, DeleteRequest } from "@/schemas/TransactionSchema";
@@ -10,25 +22,40 @@ import { UserProps } from "@/models/UserModel";
 
 abstract class TransactionController {
 
+  /**
+   * Creazione di una nuova transazione
+   * - Supporta diversi scenari: BtoB, BtoC, CtoB, CtoC
+   * - Verifica proprietario della carta, stato carta/conto e saldo disponibile
+   * - Popola le informazioni di sender e beneficiary
+   * - Invia alert via Socket.IO se il destinatario è diverso dal mittente
+   */
   static async create(req:CreateRequest, res:Response) {
     const {sourceCardNumber, type, import:Import, description} = req.body;
     try {
       const sourceCard = await CardModel.getInstance().getOne({number: sourceCardNumber});
+
+      // Controlli principali sulla carta sorgente
       if(sourceCard.userId.toString() !== req.user!.id) throw new Error("You are not the owner of this card");
       if(sourceCard.status !== CardStatus.active) throw new Error("Source card is not active");
+
       let newTransaction:TransactionDocument[], destinationUser!:UserProps;
+
       if(type===TransactionType.transfer) {
         const {destinationIban, destinationCardNumber} = req.body;
+
         if(CardModel.isDebitType(sourceCard)) {
+          // Carta di debito: controllo conto associato
           const {bankAccountId} = sourceCard;
           const sourceAccount = await BankAccountModel.getInstance().getById(bankAccountId.toString());
           if(sourceAccount.status !== BankAccountStatus.active) throw new Error("Source bankAccount is not active");
           if(sourceAccount.balance - Import < 0) throw new Error("You don't have enough money");
-          if(destinationIban) { // BtoB
+
+          if(destinationIban) { // BtoB: trasferimento tra conti
             const destinationAccount = await (await BankAccountModel.getInstance().getOne({iban: destinationIban})).populate("userId", ["id", "name", "lastname"]);
             destinationUser = destinationAccount.userId as any;
             if(destinationAccount.status !== BankAccountStatus.active) throw new Error("Destination bankAccount is not active");
             if(sourceAccount.id === destinationAccount.id) throw new Error("You can't transfer money to the same account");
+
             newTransaction = await TransactionModel.getInstance().create([{
               sourceCardId: sourceCard.id,
               sourceBankAccountId: sourceAccount.id,
@@ -37,10 +64,12 @@ abstract class TransactionController {
               type,
               description: req.body.description
             }]);
-          }else if(destinationCardNumber) { // BtoC
+
+          } else if(destinationCardNumber) { // BtoC: trasferimento a carta prepagata
             const destinationCard = await (await CardModel.getInstance().getOne({number: destinationCardNumber})).populate("userId", ["id", "name", "lastname"]);
             if(destinationCard.status !== CardStatus.active) throw new Error("Destination card is not active");
             if(destinationCard.type === CardType.debit) throw new Error("You can't transfer money to a debit card");
+
             destinationUser = destinationCard.userId as any;
             newTransaction = await TransactionModel.getInstance().create([{
               sourceCardId: sourceCard.id,
@@ -51,11 +80,15 @@ abstract class TransactionController {
               description: req.body.description
             }]);
           }
-        }else if(CardModel.isPrepaidType(sourceCard)) {
+
+        } else if(CardModel.isPrepaidType(sourceCard)) {
+          // Carta prepagata: controllo saldo
           if(sourceCard.balance - Import < 0) throw new Error("You don't have enough money");
-          if(destinationIban) { // CtoB
+
+          if(destinationIban) { // CtoB: carta -> conto
             const destinationAccount = await (await BankAccountModel.getInstance().getOne({iban: destinationIban})).populate("userId", ["id", "name", "lastname"]);
             if(destinationAccount.status !== BankAccountStatus.active) throw new Error("Destination bankAccount is not active");
+
             destinationUser = destinationAccount.userId as any;
             newTransaction = await TransactionModel.getInstance().create([{
               sourceCardId: sourceCard.id,
@@ -64,11 +97,13 @@ abstract class TransactionController {
               type,
               description: req.body.description
             }]);
-          }else if(destinationCardNumber) { // CtoC
+
+          } else if(destinationCardNumber) { // CtoC: carta -> carta
             const destinationCard = await (await CardModel.getInstance().getOne({number: destinationCardNumber})).populate("userId", ["id", "name", "lastname"]);
             if(destinationCard.status !== CardStatus.active) throw new Error("Destination card is not active");
             if(destinationCard.type === CardType.debit) throw new Error("You can't transfer money to a debit card");
             if(sourceCard.id === destinationCard.id) throw new Error("You can't transfer money to the same card");
+
             destinationUser = destinationCard.userId as any;
             newTransaction = await TransactionModel.getInstance().create([{
               sourceCardId: sourceCard.id,
@@ -78,16 +113,17 @@ abstract class TransactionController {
               description: req.body.description,
             }]);
           }
-        }    
-      }else if(type === TransactionType.withdrawal) {
-        // const {cardId} = req.body;
-        res.status(200).send("withdrawal");
+        }
       }
+
+      // Popolamento dati mittente e beneficiario
       const populatedTransaction = [{
         ...newTransaction![0].toJSON(),
         sender: {name: req.user!.name, lastname: req.user!.lastname},
         beneficiary: {name: destinationUser!.name, lastname: destinationUser!.lastname},
       }];
+
+      // Creazione alert per il destinatario se diverso dal mittente
       if(req.user?.id !== destinationUser!.id.toString()) {
         const newAlert = await AlertModel.getInstance().create([{
           userId: destinationUser!.id.toString() as any,
@@ -97,35 +133,39 @@ abstract class TransactionController {
         }])
         getIO().to(`user:${destinationUser!.id.toString()}`).emit("new-transaction", newAlert[0]);
       }
+
       res.status(200).send(populatedTransaction);
+
     } catch (error:any) {
       res.status(400).send(error.message)
     }
   }
   
+  /**
+   * Recupero transazioni dell'utente
+   * - Se id è presente, restituisce la singola transazione
+   * - Altrimenti recupera le transazioni degli ultimi 3 mesi
+   * - Popola mittente e beneficiario
+   */
   static async getMe(req:GetMeRequest, res:Response) {
     try {
       const {id} = req.params;
       if(id) {
         const transaction = await TransactionModel.getInstance().getById(id);
-        // const {json} = await BtoBTransactionModel.defaultPopulate(transaction);
-        // if(json.sourceBankAccount.userId.toString() !== req.user!.id 
-        //   && json.destinationBankAccount.userId.toString() !== req.user!.id) {
-        //     res.sendStatus(401);
-        //     return;
-        // }
         res.status(200).send(transaction);
-      }else {
+      } else {
         const {cardId} = req.query; 
         const cutoff = new Date();
         cutoff.setMonth(cutoff.getUTCMonth() - 3);
+
         if(cardId) {
           const card = await CardModel.getInstance().getById(cardId);
           if(card.userId.toString() !== req.user!.id) return res.status(401).send("This card is not yours");
-          const transactions = await TransactionModel.getInstance().getByCardId([cardId], {
-            createdAt: { $gte: cutoff },
-          });
+
+          const transactions = await TransactionModel.getInstance().getByCardId([cardId], { createdAt: { $gte: cutoff } });
           const populatedTransactions = [];
+
+          // Popolamento sender e beneficiary per ogni transazione
           for(let i =0; i<transactions.length; i++) {
             const sourceCard = await CardModel.getInstance().getById(transactions[i].sourceCardId.toString());
             let beneficiary;
@@ -133,11 +173,12 @@ abstract class TransactionController {
               const destinationBankAccount = await BankAccountModel.getInstance().getById(transactions[i].destinationBankAccountId!.toString()); 
               const populatedBankAccount = await destinationBankAccount.populate("userId", ["name", "lastname"]);
               beneficiary = populatedBankAccount.userId;
-            }else if(transactions[i].destinationCardId) {
+            } else if(transactions[i].destinationCardId) {
               const destinationCard = await CardModel.getInstance().getById(transactions[i].destinationCardId!.toString()); 
               const populatedCard = await destinationCard.populate("userId", ["name", "lastname"]);
               beneficiary = populatedCard.userId;
             }
+
             const populatedSourceCard = await sourceCard.populate("userId", ["name", "lastname"]);
             populatedTransactions.push({
               ...transactions[i].toJSON(),
@@ -145,11 +186,12 @@ abstract class TransactionController {
               beneficiary
             });
           }
+
           res.status(200).send(populatedTransactions);
-        }else {
-          const transactions = await TransactionModel.getInstance().getByUserId(req.user!.id, {
-            createdAt: { $gte: cutoff },
-          })
+
+        } else {
+          // Recupero tutte le transazioni dell'utente negli ultimi 3 mesi
+          const transactions = await TransactionModel.getInstance().getByUserId(req.user!.id, { createdAt: { $gte: cutoff } })
           res.status(200).send(transactions);
         }
       }
@@ -158,13 +200,16 @@ abstract class TransactionController {
     }
   }
 
+  /**
+   * Recupero transazioni globali (usato da admin o query globale)
+   */
   static async get(req:GetRequest, res:Response) {
     try {
       const {id} = req.params;
       if(id) {
         const transaction = await TransactionModel.getInstance().getById(id);
         res.status(200).send(transaction);
-      }else {
+      } else {
         const transactions = await TransactionModel.getInstance().getAll();
         res.status(200).send(transactions);
       }
@@ -173,6 +218,9 @@ abstract class TransactionController {
     }
   }
 
+  /**
+   * Eliminazione di più transazioni tramite array di ID
+   */
   static async delete(req: DeleteRequest, res: Response) {
     try {
       const {transactionIds} = req.body;

@@ -1,0 +1,52 @@
+# 📖 Descrizione
+Questo progetto rappresenta il backend di un sistema di banking digitale, sviluppato in TypeScript con Node.js, Express e MongoDB.
+Fornisce gestione di utenti, titolari di conto (holder), carte, conti bancari e transazioni, con supporto per notifiche in tempo reale tramite Socket.IO.
+
+# 🗂️ Struttura del progetto
+/dist                  # Cartella dei file compilati TypeScript
+/src                   # Codice sorgente TypeScript
+  /classes             # Classi generiche e helper (es. BaseModel, Utilities)
+  /controllers         # Controllori Express per gestire la logica di business
+  /middleware          # Middleware Express (es. validazione, autorizzazioni)
+  /models              # Modelli Mongoose e tipi TypeScript
+  /routes              # Definizione delle rotte Express
+  /schemas             # Schemi Zod per validazione dati
+  /server              # Configurazione server e Socket.IO
+  index.ts             # Entry point dell’applicazione
+  pathConfig.ts        # Configurazioni dei percorsi e variabili ambiente
+tsconfig.json          # Configurazione TypeScript
+.env                   # Variabili ambiente sensibili
+.gitignore             # File e cartelle da ignorare da git
+
+# ⚙️ Variabili di ambiente (.env)
+| Chiave                 | Descrizione                                      |
+| ---------------------- | ------------------------------------------------ |
+| `ACCESS_TOKEN_SECRET`  | Secret per firmare i JWT di accesso              |
+| `REFRESH_TOKEN_SECRET` | Secret per firmare i JWT di refresh              |
+| `TEMP_TOKEN_SECRET`    | Secret per token temporanei (es. per OTP)        |
+| `RESEND_KEY`           | Chiave per limitare o validare il reinvio di OTP |
+
+
+# 📝 Best Practices implementate
+- Architettura modulare MVC (Models, Controllers, Routes)
+- Uso di classi base astratte (BaseModel) per CRUD generico
+- Middleware per sicurezza e validazione
+- Transazioni MongoDB con gestione di errori transitori
+- Cascade delete per mantenere integrità dei dati
+- Tipizzazione completa con TypeScript
+
+# 🚀 Come avviare il progetto
+1. Clonare il repository
+git clone <repo-url>
+cd project
+
+2. Installare dipendenze
+npm install
+
+3. Creare .env con le chiavi necessarie
+
+4. Compilare TypeScript
+npm run build
+
+5. Avviare server
+npm start

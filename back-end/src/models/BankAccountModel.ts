@@ -1,17 +1,20 @@
 import mongoose from "mongoose";
-import CardModel, { CardDocument } from "./CardModel";
-import BaseModel, { type AggregateArgsProps, type DeleteManyByIdArgsProps, type DeleteManyArgsProps } from "@/classes/BaseModel";
+import CardModel from "./CardModel";
+import BaseModel, { type DeleteManyByIdArgsProps, type DeleteManyArgsProps } from "@/classes/BaseModel";
 import Utilities from "@/classes/Utilities";
-import TransactionModel from "./TransactionModel";
 
+/**
+ * Enum degli stati di un conto bancario
+ */
 export enum BankAccountStatus {
   active = "active",
   pending_verification = "pending_verification",
-  suspended = "suspended",
-  blocked = "blocked",
   closed = "closed"
 }
 
+/**
+ * Schema dei conti bancari
+ */
 const bankAccountSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -44,22 +47,9 @@ const bankAccountSchema = new mongoose.Schema({
     default: BankAccountStatus.pending_verification,
     required: [true, "Enter status"],
   },
-  otpCodeHash: {
-    type: String,
-    required: true,
-    select: false
-  },
-  otpExpiresAt: {
-    type: Date,
-    required: true,
-    select: false
-  },
-  otpAttempts: {
-    type: Number,
-    required: true,
-    default: 0,
-    select: false
-  }
+  otpCodeHash: { type: String, required: true, select: false },
+  otpExpiresAt: { type: Date, required: true, select: false },
+  otpAttempts: { type: Number, required: true, default: 0, select: false }
 }, {
   timestamps: true,
   toJSON: {
@@ -67,57 +57,30 @@ const bankAccountSchema = new mongoose.Schema({
     transform: function (doc, ret: Record<string, any>) {
       ret.id = ret._id;
       delete ret._id; 
-      delete ret.__v; // Rimuove __v durante la conversione in JSON
+      delete ret.__v; 
       return ret;
     }
   }
-}
-);
+});
+
 const bankAccountModel = mongoose.model<any, mongoose.Model<BankAccountProps>>("bankAccount", bankAccountSchema);
+
+/**
+ * Tipi di proprietà del conto bancario
+ */
 type BankAccountSchemaProps = Omit<mongoose.InferSchemaType<typeof bankAccountSchema>, "balance"> & {balance: number;};
 export type BankAccountProps = BankAccountSchemaProps & {id: string};
 export type BankAccountDocument = mongoose.HydratedDocument<BankAccountSchemaProps>;
 
-
+/**
+ * BankAccountModel estende BaseModel e gestisce logica avanzata
+ */
 class BankAccountModel extends BaseModel<BankAccountDocument> {
 
-  override async aggregate(...args: AggregateArgsProps<CardDocument>) {
-    const [pipeline, options] = args;
-    const defaultPipeline:mongoose.PipelineStage[] = [
-      { $set: { id: "$_id"}},
-      { $unset: ["_id", "__v", "otpCodeHash"]},
-      {
-        $set: {
-          otpExpiresAt: {
-            $cond: [
-              { $eq: ["$status", BankAccountStatus.pending_verification] },
-              "$otpExpiresAt",
-              "$$REMOVE"
-            ]
-          },
-          otpAttempts: {
-            $cond: [
-              { $eq: ["$status", BankAccountStatus.pending_verification] },
-              "$otpAttempts",
-              "$$REMOVE"
-            ]
-          },
-          iban: {
-            $cond: [
-              { $eq: ["$status", BankAccountStatus.active] },
-              "$iban",
-              "$$REMOVE"
-            ]
-          }
-        }
-      }
-    ];
-    return await super.aggregate([
-      ...pipeline,
-      ...defaultPipeline,
-    ], options);
-  }
-
+  /**
+   * Override deleteManyById:
+   * elimina anche tutte le carte collegate ai conti
+   */
   override async deleteManyById(...args: DeleteManyByIdArgsProps<BankAccountDocument>) {
     const [ids, options] = args;
     return await Utilities.followSession(options?.session, async(session) => {
@@ -127,10 +90,14 @@ class BankAccountModel extends BaseModel<BankAccountDocument> {
     });
   }
 
+  /**
+   * Override deleteMany:
+   * elimina conti e carte collegate filtrando tramite filtro
+   */
   override async deleteMany(...args: DeleteManyArgsProps<BankAccountDocument>) {
     const [filter, options] = args;
     return await Utilities.followSession(options?.session, async(session) => {
-      const bankAccountsIds = await this.getMany(filter, undefined, {session}).then((res) => res.map((e) => e.id));
+      const bankAccountsIds = await this.getMany(filter, undefined, {session}).then(res => res.map(e => e.id));
       const result = await super.deleteMany(filter, {...options, session});
       await CardModel.getInstance().deleteMany({bankAccountId: {$in: bankAccountsIds}}, {...options, session});
       return result;
@@ -139,5 +106,6 @@ class BankAccountModel extends BaseModel<BankAccountDocument> {
 
 }
 
+// Inizializza singleton
 BankAccountModel.getInstance(bankAccountModel);
 export default BankAccountModel;

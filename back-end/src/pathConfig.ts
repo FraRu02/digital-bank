@@ -1,5 +1,3 @@
-import { UserRole } from "./models/UserModel";
-
 const baseUrl = "/api";
 
 export enum PATH {
@@ -11,8 +9,3 @@ export enum PATH {
   holder = `${baseUrl}/holders`,
   alert = `${baseUrl}/alerts`,
 }
-
-// export const PATH_PERMISSIONS:{[K in keyof typeof PATH]?: Array<UserRole>} = {
-//   transaction: [UserRole.admin],
-//   // event: [UserRole.organizer],
-// }
