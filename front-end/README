@@ -59,13 +59,19 @@ Dev dependencies principali:
 - Vite plugins: supporto React e alias dei percorsi
 
 # 🚀 Come avviare il progetto
-1. Installare le dipendenze:
+1. Clonare il repository
+git clone <repo-url>
+cd project
+
+2. Installare dipendenze
 npm install
 
-2. Avviare il server di sviluppo:
+3. Creare .env con le chiavi necessarie
+
+4. Avviare il server di sviluppo
 npm run dev
 
-3. Compilare il progetto per produzione:
+5. Compilare il progetto per produzione
 npm run build
 
 
