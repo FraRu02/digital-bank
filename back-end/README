@@ -24,7 +24,7 @@ tsconfig.json          # Configurazione TypeScript
 | `ACCESS_TOKEN_SECRET`  | Secret per firmare i JWT di accesso              |
 | `REFRESH_TOKEN_SECRET` | Secret per firmare i JWT di refresh              |
 | `TEMP_TOKEN_SECRET`    | Secret per token temporanei (es. per OTP)        |
-| `RESEND_KEY`           | Chiave per limitare o validare il reinvio di OTP |
+| `RESEND_KEY`           | API key per l’utilizzo del servizio email Resend |
 
 
 # 📝 Best Practices implementate
