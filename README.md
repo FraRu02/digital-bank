@@ -77,3 +77,10 @@ npm run dev
 **Nota**  
 Il progetto è corredato da documentazione specifica all’interno delle cartelle front-end e back-end.  
 La consultazione dei rispettivi file **README** è necessaria per comprendere la struttura dell’applicazione, configurare correttamente le variabili d’ambiente e avviare i server in modo appropriato.
+
+Per eseguire correttamente il progetto sul proprio PC, assicurati di avere installato e configurato correttamente le seguenti dipendenze:
+- Node.js – necessario per eseguire sia il backend sia il frontend.
+- MongoDB – il server deve essere avviato in replicaset, altrimenti le sessioni e la persistenza delle operazioni potrebbero non funzionare correttamente.
+- TypeScript – necessario per compilare eventuali file TypeScript presenti nel progetto.
+  
+💡 Verifica che tutte le dipendenze siano funzionanti prima di avviare il backend. Questo garantirà il corretto collegamento al database, la gestione delle sessioni e il normale funzionamento delle API.
