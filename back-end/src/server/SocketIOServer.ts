@@ -23,8 +23,8 @@ let io: SocketIOServer;
 export const initSocket = (httpServer: HttpServer) => {
   io = new SocketIOServer(httpServer, {
     cors: {
-      // origin: 'http://localhost:5173',
-      origin: "https://nexabank.it",
+      origin: 'http://localhost:5173',
+      // origin: "https://nexabank.it",
       credentials: true,
     },
   });

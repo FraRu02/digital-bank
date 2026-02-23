@@ -38,8 +38,8 @@ app.use(express.json());
 // Configurazione CORS per consentire richieste cross-origin dal frontend
 app.use(
   cors({
-    origin: "https://nexabank.it",
-    // origin: "http://localhost:5173",
+    // origin: "https://nexabank.it",
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
   })

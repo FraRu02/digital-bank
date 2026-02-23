@@ -9,13 +9,15 @@ export default defineConfig({
   server: {
     proxy: {
       '/socket.io': {
-        target: 'https://api.nexabank.it',
+        target: 'http://localhost:3005',
+        // target: 'https://api.nexabank.it',
         changeOrigin: true,
         ws: true, // ← 🔥 fondamentale per socket.io
         secure: true,
       },
       '/api': {
-        target: 'https://api.nexabank.it',
+        // target: 'https://api.nexabank.it',,
+        target: 'http://localhost:3005',
         changeOrigin: true,
         secure: true,
 
